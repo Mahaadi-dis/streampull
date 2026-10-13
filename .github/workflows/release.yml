@@ -1,6 +1,7 @@
 name: Release
 
-# Push a tag like `v0.1.0` to build installers for every OS and draft a GitHub release.
+# Push a tag like `v0.1.0` to build the installers and publish a GitHub release.
+# Windows only for now — macOS and Linux are coming soon (uncomment their matrix entries when ready).
 on:
   push:
     tags: ['v*']
@@ -18,10 +19,10 @@ jobs:
         include:
           - os: windows-latest
             script: dist:win
-          - os: macos-latest
-            script: dist:mac
-          - os: ubuntu-latest
-            script: dist:linux
+          # - os: macos-latest
+          #   script: dist:mac
+          # - os: ubuntu-latest
+          #   script: dist:linux
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -46,7 +47,7 @@ jobs:
             release/*.deb
 
   publish:
-    name: Draft release
+    name: Publish release
     needs: build
     runs-on: ubuntu-latest
     steps:
@@ -58,5 +59,5 @@ jobs:
       - uses: softprops/action-gh-release@v2
         with:
           files: release/*
-          draft: true
+          draft: false
           generate_release_notes: true

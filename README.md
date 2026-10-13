@@ -4,10 +4,10 @@
 
 # StreamPull
 
-**Download videos and audio from almost any site — in a modern, dark‑purple desktop app.**
+**Download videos and audio from almost any site — in a modern desktop app with switchable color themes.**
 
 ![License: MIT](https://img.shields.io/badge/license-MIT-8b5cf6)
-![Platforms](https://img.shields.io/badge/platforms-Windows%20%7C%20macOS%20%7C%20Linux-7c3aed)
+![Platforms](https://img.shields.io/badge/Windows-available%20%C2%B7%20macOS%20%7C%20Linux%20%7C%20Android-coming%20soon-7c3aed)
 ![Built with](https://img.shields.io/badge/built%20with-Electron%20%2B%20yt--dlp%20%2B%20FFmpeg-c084fc)
 
 [العربية](README.ar.md) · English
@@ -28,6 +28,7 @@ StreamPull is a desktop alternative to browser extensions like *Video DownloadHe
 - **Playlists & channels** — select, search and download many items at once.
 - **Smart queue** — parallel downloads, pause / resume / cancel / retry, live speed and ETA.
 - **Library** — history with search, filters, *open file*, *show in folder*, *download again*.
+- **Color themes** — Violet, Ocean, Emerald, Rose, Sunset or Midnight black; change it any time in *Settings → Appearance*.
 - **Arabic first, English too** — full RTL layout, switchable at any time.
 - **Auto‑updating engine** — yt-dlp refreshes itself daily, because sites change constantly.
 - **Private by design** — no accounts, no telemetry, nothing leaves your machine except the downloads you start.
@@ -36,27 +37,24 @@ StreamPull is a desktop alternative to browser extensions like *Video DownloadHe
   <img src="docs/screenshots/library-en.png" width="400" alt="Library" />
   <img src="docs/screenshots/browser-ar.png" width="400" alt="Built-in browser (Arabic UI)" />
 </p>
+<p align="center">
+  <img src="docs/screenshots/settings-en.png" width="400" alt="Settings with theme picker" />
+</p>
 
-## Install
+## Download
 
-Download the installer for your system from the [**Releases**](../../releases) page.
+Get the latest Windows build from the [**Releases**](../../releases) page:
 
-| System | File |
+| File | What it is |
 | --- | --- |
-| Windows | `StreamPull-Setup-x.y.z.exe` (installer) or `…-portable.exe` |
-| macOS | `StreamPull-x.y.z-mac-arm64.dmg` (Apple Silicon) / `…-x64.dmg` (Intel) |
-| Linux | `StreamPull-x.y.z-linux-x86_64.AppImage` or `.deb` |
+| `StreamPull-Setup-x.y.z.exe` | Installer (adds a Start menu entry, uninstaller) |
+| `StreamPull-x.y.z-portable.exe` | Portable — run it from anywhere, nothing to install |
 
-> **Status:** Windows is the most tested platform. The macOS and Linux builds are produced by CI and
-> should be considered **experimental** — please [open an issue](../../issues) if something is off.
+> **Coming soon:** macOS, Linux and Android versions are planned for the next few days.
+> Star or watch the repository to get notified when they land.
 
-**The builds are not code‑signed yet**, so your OS may warn you the first time:
-
-- **Windows** — SmartScreen: *More info → Run anyway*.
-- **macOS** — right‑click the app → *Open*. If macOS says the app is damaged, run
-  `xattr -cr "/Applications/StreamPull.app"`.
-- **Linux** — `chmod +x StreamPull-*.AppImage`. On Ubuntu 23.10+ you may need `--no-sandbox` for the AppImage;
-  the `.deb` package does not.
+**The builds are not code‑signed yet**, so Windows SmartScreen may warn you the first time:
+*More info → Run anyway*.
 
 On first launch the app downloads **yt-dlp** and **FFmpeg** (about 50 MB, one time) into its own data folder.
 
@@ -71,10 +69,11 @@ npm ci
 npm run dev          # run the app with hot reload
 npm run typecheck    # TypeScript
 npm test             # unit tests
-npm run dist:win     # or dist:mac / dist:linux — builds installers into ./release
+npm run dist:win     # builds the Windows installer + portable exe into ./release
 ```
 
-Installers must be built on their own OS (that is what the GitHub Actions release workflow does).
+`dist:mac` and `dist:linux` also exist, but those platforms are **not released or tested yet** (coming soon).
+Installers must be built on their own OS.
 
 ## How it works
 
@@ -94,7 +93,7 @@ renderer (React)  ──IPC──▶  main process (Electron)  ──spawn──
 - **DRM‑protected** services (Netflix, Disney+, …) are not supported and never will be.
 - Signing in with a **Google account** inside the built‑in browser is often blocked by Google.
 - The built‑in browser has a single tab for now.
-- An Android version is planned but not started.
+- macOS, Linux and Android versions are coming soon (see above).
 
 ## Legal
 
