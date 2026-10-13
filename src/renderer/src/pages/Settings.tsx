@@ -1,0 +1,202 @@
+import { useState } from 'react'
+import { FolderOpen, Info, Loader2, RefreshCw } from 'lucide-react'
+import type { Lang, NameTemplate } from '@shared/types'
+import { useT } from '@/i18n'
+import { qualityLabel } from '@/lib/format'
+import { useApp } from '@/store/app'
+
+function Row({ label, hint, children }: { label: string; hint?: string; children: React.ReactNode }): React.JSX.Element {
+  return (
+    <div className="flex items-center justify-between gap-6 border-b border-line py-4 last:border-0">
+      <div className="min-w-0">
+        <div className="text-sm font-semibold">{label}</div>
+        {hint && <div className="mt-0.5 text-xs text-violet-300/55">{hint}</div>}
+      </div>
+      <div className="shrink-0">{children}</div>
+    </div>
+  )
+}
+
+function Segmented<T extends string>({
+  value,
+  options,
+  onChange
+}: {
+  value: T
+  options: { key: T; label: string }[]
+  onChange: (v: T) => void
+}): React.JSX.Element {
+  return (
+    <div className="flex rounded-xl border border-line bg-white/[0.03] p-1">
+      {options.map((o) => (
+        <button
+          key={o.key}
+          onClick={() => onChange(o.key)}
+          className={`rounded-lg px-3.5 py-1.5 text-sm font-medium transition ${
+            value === o.key ? 'bg-brand/80 text-white shadow-glow' : 'text-violet-200/65 hover:text-white'
+          }`}
+        >
+          {o.label}
+        </button>
+      ))}
+    </div>
+  )
+}
+
+function Section({ title, children }: { title: string; children: React.ReactNode }): React.JSX.Element {
+  return (
+    <section className="mb-6">
+      <h2 className="mb-2 px-1 text-sm font-bold text-brand-light">{title}</h2>
+      <div className="card px-5">{children}</div>
+    </section>
+  )
+}
+
+export default function Settings(): React.JSX.Element | null {
+  const t = useT()
+  const { settings, updateSettings, binary } = useApp()
+  const [updating, setUpdating] = useState(false)
+  if (!settings) return null
+
+  const pickFolder = async (): Promise<void> => {
+    const dir = await window.api.chooseFolder()
+    if (dir) await updateSettings({ downloadDir: dir })
+  }
+
+  const update = async (): Promise<void> => {
+    setUpdating(true)
+    try {
+      await window.api.updateYtdlp()
+    } finally {
+      setUpdating(false)
+    }
+  }
+
+  const speeds = ['', '500K', '1M', '2M', '5M', '10M']
+  const qualities = ['best', '2160', '1440', '1080', '720', '480', '360', 'mp3', 'm4a']
+
+  return (
+    <div className="mx-auto max-w-3xl px-8 pb-10 pt-6">
+      <h1 className="mb-6 text-2xl font-extrabold">{t('set.title')}</h1>
+
+      <Section title={t('set.general')}>
+        <Row label={t('set.language')}>
+          <Segmented<Lang>
+            value={settings.lang}
+            onChange={(lang) => updateSettings({ lang })}
+            options={[
+              { key: 'ar', label: 'العربية' },
+              { key: 'en', label: 'English' }
+            ]}
+          />
+        </Row>
+        <Row label={t('set.folder')} hint={settings.downloadDir}>
+          <div className="flex gap-2">
+            <button className="btn-ghost" onClick={() => window.api.openDownloadDir()}>
+              <FolderOpen size={16} /> {t('set.openFolder')}
+            </button>
+            <button className="btn-primary" onClick={pickFolder}>
+              {t('set.change')}
+            </button>
+          </div>
+        </Row>
+        <Row label={t('set.notifications')}>
+          <button
+            role="switch"
+            aria-checked={settings.notifications}
+            onClick={() => updateSettings({ notifications: !settings.notifications })}
+            className={`relative h-7 w-12 rounded-full transition ${
+              settings.notifications ? 'bg-gradient-to-r from-brand-deep to-brand-pink shadow-glow' : 'bg-white/10'
+            }`}
+          >
+            <span
+              className={`absolute top-1 h-5 w-5 rounded-full bg-white shadow transition-all ${
+                settings.notifications ? 'start-6' : 'start-1'
+              }`}
+            />
+          </button>
+        </Row>
+      </Section>
+
+      <Section title={t('set.downloads')}>
+        <Row label={t('set.concurrency')}>
+          <div className="flex items-center gap-3" dir="ltr">
+            <input
+              type="range"
+              min={1}
+              max={8}
+              value={settings.concurrency}
+              onChange={(e) => updateSettings({ concurrency: Number(e.target.value) })}
+              className="w-40 accent-violet-500"
+            />
+            <span className="w-5 text-center text-sm font-bold tabular-nums">{settings.concurrency}</span>
+          </div>
+        </Row>
+        <Row label={t('set.defaultQuality')}>
+          <select
+            className="input !w-auto !py-2"
+            value={settings.defaultQuality}
+            onChange={(e) => updateSettings({ defaultQuality: e.target.value })}
+          >
+            {qualities.map((q) => (
+              <option key={q} value={q} className="bg-surface">
+                {qualityLabel(q, t('media.best'))}
+              </option>
+            ))}
+          </select>
+        </Row>
+        <Row label={t('set.nameTemplate')}>
+          <select
+            className="input !w-auto !py-2"
+            value={settings.nameTemplate}
+            onChange={(e) => updateSettings({ nameTemplate: e.target.value as NameTemplate })}
+          >
+            {(['title', 'uploader-title', 'title-id'] as NameTemplate[]).map((n) => (
+              <option key={n} value={n} className="bg-surface">
+                {t(`set.name.${n}`)}
+              </option>
+            ))}
+          </select>
+        </Row>
+        <Row label={t('set.speedLimit')}>
+          <select
+            className="input !w-auto !py-2"
+            value={settings.speedLimit}
+            onChange={(e) => updateSettings({ speedLimit: e.target.value })}
+          >
+            {speeds.map((s) => (
+              <option key={s} value={s} className="bg-surface">
+                {s ? `${s.replace('K', ' KB/s').replace('M', ' MB/s')}` : t('set.unlimited')}
+              </option>
+            ))}
+          </select>
+        </Row>
+      </Section>
+
+      <Section title={t('set.engine')}>
+        <Row
+          label={t('set.engineVersion')}
+          hint={t('set.engineHint')}
+        >
+          <div className="flex items-center gap-3">
+            <span className="chip" dir="ltr">
+              {binary.phase === 'ready' ? binary.version : '—'}
+            </span>
+            <button className="btn-ghost" onClick={update} disabled={updating || binary.phase === 'downloading'}>
+              {updating ? <Loader2 size={16} className="animate-spin" /> : <RefreshCw size={16} />}
+              {updating ? t('set.updating') : t('set.update')}
+            </button>
+          </div>
+        </Row>
+      </Section>
+
+      <div className="flex gap-3 rounded-2xl border border-line bg-white/[0.03] p-4 text-xs leading-relaxed text-violet-200/55">
+        <Info size={18} className="mt-0.5 shrink-0 text-brand-light" />
+        <div>
+          <div className="mb-0.5 font-semibold text-violet-100">{t('set.about')}</div>
+          {t('set.disclaimer')}
+        </div>
+      </div>
+    </div>
+  )
+}

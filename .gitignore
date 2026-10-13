@@ -1,0 +1,22 @@
+# dependencies & build output
+node_modules/
+out/
+dist/
+release/
+*.tsbuildinfo
+
+# logs & OS junk
+*.log
+npm-debug.log*
+.DS_Store
+Thumbs.db
+
+# local env / secrets
+.env
+.env.*
+*.pem
+
+# editors
+.vscode/*
+!.vscode/extensions.json
+.idea/

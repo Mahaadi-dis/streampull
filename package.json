@@ -1,0 +1,130 @@
+{
+  "name": "streampull",
+  "productName": "StreamPull",
+  "version": "0.1.0",
+  "description": "Download videos and audio from almost any site. Modern desktop app built on yt-dlp and FFmpeg.",
+  "main": "./out/main/index.js",
+  "author": {
+    "name": "StreamPull contributors",
+    "email": "noreply@users.noreply.github.com"
+  },
+  "private": true,
+  "scripts": {
+    "dev": "electron-vite dev",
+    "build": "electron-vite build",
+    "preview": "electron-vite preview",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "dist:win": "electron-vite build && electron-builder --win",
+    "dist:mac": "electron-vite build && electron-builder --mac",
+    "dist:linux": "electron-vite build && electron-builder --linux",
+    "dist": "electron-vite build && electron-builder"
+  },
+  "dependencies": {
+    "@fontsource/ibm-plex-sans-arabic": "^5.3.0",
+    "@fontsource/inter": "^5.3.0",
+    "framer-motion": "^14.2.0",
+    "lucide-react": "^1.56.0",
+    "react": "^19.3.0",
+    "react-dom": "^19.3.0",
+    "zustand": "^5.0.15"
+  },
+  "devDependencies": {
+    "@types/node": "^26.6.5",
+    "@types/react": "^19.3.0",
+    "@types/react-dom": "^19.3.0",
+    "@vitejs/plugin-react": "^5.2.0",
+    "autoprefixer": "^10.6.1",
+    "electron": "^44.7.1",
+    "electron-builder": "^26.15.3",
+    "electron-vite": "^5.0.0",
+    "postcss": "^8.5.30",
+    "tailwindcss": "^3.4.19",
+    "typescript": "^7.0.2",
+    "vite": "^7.3.7",
+    "vitest": "^5.0.4"
+  },
+  "build": {
+    "appId": "com.streampull.app",
+    "productName": "StreamPull",
+    "copyright": "Copyright © 2026 StreamPull contributors",
+    "directories": {
+      "output": "release",
+      "buildResources": "resources"
+    },
+    "files": [
+      "out/**/*",
+      "package.json"
+    ],
+    "npmRebuild": false,
+    "win": {
+      "target": [
+        "nsis",
+        "portable"
+      ],
+      "icon": "resources/icon.ico"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "perMachine": false,
+      "shortcutName": "StreamPull",
+      "artifactName": "StreamPull-Setup-${version}.${ext}"
+    },
+    "portable": {
+      "artifactName": "StreamPull-${version}-portable.${ext}"
+    },
+    "mac": {
+      "target": [
+        {
+          "target": "dmg",
+          "arch": [
+            "x64",
+            "arm64"
+          ]
+        },
+        {
+          "target": "zip",
+          "arch": [
+            "x64",
+            "arm64"
+          ]
+        }
+      ],
+      "category": "public.app-category.utilities",
+      "icon": "resources/icon.png",
+      "identity": null,
+      "artifactName": "StreamPull-${version}-mac-${arch}.${ext}"
+    },
+    "linux": {
+      "target": [
+        "AppImage",
+        "deb"
+      ],
+      "category": "AudioVideo",
+      "icon": "resources/icon.png",
+      "maintainer": "StreamPull contributors <noreply@users.noreply.github.com>",
+      "synopsis": "Download videos from almost any site",
+      "artifactName": "StreamPull-${version}-linux-${arch}.${ext}"
+    },
+    "extraResources": [
+      {
+        "from": "resources/icon.ico",
+        "to": "icon.ico"
+      },
+      {
+        "from": "resources/icon.png",
+        "to": "icon.png"
+      }
+    ]
+  },
+  "license": "MIT",
+  "keywords": [
+    "video-downloader",
+    "yt-dlp",
+    "ffmpeg",
+    "electron",
+    "rtl",
+    "arabic"
+  ]
+}
