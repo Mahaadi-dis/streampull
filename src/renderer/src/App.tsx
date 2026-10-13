@@ -1,6 +1,7 @@
-import { useEffect } from 'react'
+import { useEffect, useLayoutEffect } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
 import { useApp } from '@/store/app'
+import { applyTheme } from '@/lib/theme'
 import { Sidebar } from '@/components/Sidebar'
 import { Toasts } from '@/components/Toasts'
 import Home from '@/pages/Home'
@@ -17,6 +18,10 @@ export default function App(): React.JSX.Element | null {
   useEffect(() => {
     void init()
   }, [init])
+
+  useLayoutEffect(() => {
+    if (settings) applyTheme(settings.theme)
+  }, [settings?.theme])
 
   useEffect(() => {
     if (!settings) return

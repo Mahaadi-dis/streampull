@@ -10,6 +10,7 @@ const settings: Settings = {
   downloadDir: 'C:\\Users\\Mahdi\\Downloads\\StreamPull',
   concurrency: 3,
   lang: 'ar',
+  theme: 'violet',
   defaultQuality: 'best',
   nameTemplate: 'title',
   speedLimit: '',

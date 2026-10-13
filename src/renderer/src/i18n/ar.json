@@ -123,5 +123,14 @@
   "br.kind.file": "ملف",
   "br.startTitle": "تصفّح وشغّل أي فيديو",
   "br.startHint": "افتح أي موقع، وشغّل الفيديو، والبرنامج يلتقطه لك تلقائياً مثل Video DownloadHelper.",
-  "br.loginNote": "تسجيل دخولك داخل المتصفح يُحفظ، وتنزيلاتك تستخدمه تلقائياً."
+  "br.loginNote": "تسجيل دخولك داخل المتصفح يُحفظ، وتنزيلاتك تستخدمه تلقائياً.",
+  "set.appearance": "المظهر",
+  "set.theme": "الثيم",
+  "set.themeHint": "غيّر ألوان البرنامج — يتطبق فوراً ويُحفظ.",
+  "theme.violet": "بنفسجي",
+  "theme.ocean": "محيط",
+  "theme.emerald": "زمرد",
+  "theme.rose": "وردي",
+  "theme.sunset": "غروب",
+  "theme.midnight": "أسود ليلي"
 }

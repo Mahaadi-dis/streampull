@@ -123,5 +123,14 @@
   "br.kind.file": "File",
   "br.startTitle": "Browse and play any video",
   "br.startHint": "Open any site, play the video, and the app picks it up automatically — just like Video DownloadHelper.",
-  "br.loginNote": "Sites you sign in to inside the browser stay signed in, and your downloads use that session."
+  "br.loginNote": "Sites you sign in to inside the browser stay signed in, and your downloads use that session.",
+  "set.appearance": "Appearance",
+  "set.theme": "Theme",
+  "set.themeHint": "Change the app colors — applied instantly and remembered.",
+  "theme.violet": "Violet",
+  "theme.ocean": "Ocean",
+  "theme.emerald": "Emerald",
+  "theme.rose": "Rose",
+  "theme.sunset": "Sunset",
+  "theme.midnight": "Midnight"
 }

@@ -4,7 +4,8 @@ import { registerIpc } from './ipc'
 import { ensureBinaries } from './services/binaries'
 import { flushHistory, initHistory } from './services/history'
 import { killAll } from './services/queue'
-import { flushSettings, initSettings } from './services/settings'
+import { flushSettings, getSettings, initSettings } from './services/settings'
+import { windowColors } from '@shared/themes'
 
 let win: BrowserWindow | null = null
 
@@ -51,13 +52,14 @@ if (!app.requestSingleInstanceLock()) {
 }
 
 function createWindow(): void {
+  const colors = windowColors(getSettings().theme)
   win = new BrowserWindow({
     width: 1180,
     height: 760,
     minWidth: 900,
     minHeight: 620,
     show: false,
-    backgroundColor: '#0d0818',
+    backgroundColor: colors.color,
     title: 'StreamPull',
     icon: iconPath(),
     // Custom title bar: native traffic lights on macOS, a themed controls overlay on Windows/Linux.
@@ -65,7 +67,7 @@ function createWindow(): void {
       ? { titleBarStyle: 'hiddenInset' as const, trafficLightPosition: { x: 16, y: 14 } }
       : {
           titleBarStyle: 'hidden' as const,
-          titleBarOverlay: { color: '#0d0818', symbolColor: '#c4b5fd', height: 44 }
+          titleBarOverlay: { color: colors.color, symbolColor: colors.symbolColor, height: 44 }
         }),
     webPreferences: {
       preload: join(__dirname, '../preload/index.js'),

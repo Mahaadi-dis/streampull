@@ -1,3 +1,5 @@
+import type { ThemeId } from './themes'
+
 export type Lang = 'ar' | 'en'
 
 export type NameTemplate = 'title' | 'uploader-title' | 'title-id'
@@ -6,6 +8,7 @@ export interface Settings {
   downloadDir: string
   concurrency: number
   lang: Lang
+  theme: ThemeId
   defaultQuality: QualityKey
   nameTemplate: NameTemplate
   speedLimit: string // '' = unlimited, otherwise yt-dlp rate like "2M"

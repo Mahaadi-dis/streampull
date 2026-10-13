@@ -46,7 +46,7 @@ export function Sidebar(): React.JSX.Element {
               {on && (
                 <motion.span
                   layoutId="nav-pill"
-                  className="absolute inset-0 rounded-xl border border-brand-light/30 bg-gradient-to-br from-brand-deep/55 to-brand/25 shadow-[0_0_24px_-6px_rgba(139,92,246,.7)]"
+                  className="absolute inset-0 rounded-xl border border-brand-light/30 bg-gradient-to-br from-brand-deep/55 to-brand/25 shadow-[0_0_24px_-6px_rgb(var(--brand)/.7)]"
                   transition={{ type: 'spring', stiffness: 420, damping: 34 }}
                 />
               )}

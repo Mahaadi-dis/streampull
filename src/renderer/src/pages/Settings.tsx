@@ -1,5 +1,6 @@
 import { useState } from 'react'
-import { FolderOpen, Info, Loader2, RefreshCw } from 'lucide-react'
+import { Check, FolderOpen, Info, Loader2, RefreshCw } from 'lucide-react'
+import { THEMES } from '@shared/themes'
 import type { Lang, NameTemplate } from '@shared/types'
 import { useT } from '@/i18n'
 import { qualityLabel } from '@/lib/format'
@@ -79,6 +80,56 @@ export default function Settings(): React.JSX.Element | null {
     <div className="mx-auto max-w-3xl px-8 pb-10 pt-6">
       <h1 className="mb-6 text-2xl font-extrabold">{t('set.title')}</h1>
 
+      <Section title={t('set.appearance')}>
+        <div className="py-4">
+          <div className="mb-3">
+            <div className="text-sm font-semibold">{t('set.theme')}</div>
+            <div className="mt-0.5 text-xs text-violet-300/55">{t('set.themeHint')}</div>
+          </div>
+          <div className="grid grid-cols-3 gap-3">
+            {THEMES.map((th) => {
+              const active = settings.theme === th.id
+              const rgb = (c: readonly number[], a?: number): string =>
+                `rgb(${c.join(' ')}${a !== undefined ? ` / ${a}` : ''})`
+              return (
+                <button
+                  key={th.id}
+                  aria-pressed={active}
+                  onClick={() => updateSettings({ theme: th.id })}
+                  className={`rounded-xl border p-2.5 text-start transition active:scale-[0.97] ${
+                    active ? 'border-brand-light/70 shadow-glow' : 'border-line hover:border-brand-light/40'
+                  }`}
+                >
+                  <div className="relative h-16 overflow-hidden rounded-lg" style={{ background: rgb(th.bg) }}>
+                    <div className="absolute inset-y-0 start-0 w-1/4" style={{ background: rgb(th.surface) }} />
+                    <div
+                      className="absolute start-[32%] top-3 h-2 w-1/2 rounded-full"
+                      style={{ background: `linear-gradient(90deg, ${rgb(th.brandDeep)}, ${rgb(th.accent2)})` }}
+                    />
+                    <div
+                      className="absolute start-[32%] top-8 h-6 w-[60%] rounded-md border"
+                      style={{ background: rgb(th.surface2), borderColor: rgb(th.brandLight, 0.25) }}
+                    />
+                    {active && (
+                      <span
+                        className="absolute end-1.5 top-1.5 flex h-5 w-5 items-center justify-center rounded-full text-white"
+                        style={{ background: rgb(th.brand) }}
+                      >
+                        <Check size={12} strokeWidth={3} />
+                      </span>
+                    )}
+                  </div>
+                  <div className="mt-2 flex items-center gap-2 text-sm font-medium">
+                    <span className="h-3 w-3 rounded-full" style={{ background: rgb(th.brand) }} />
+                    {t(`theme.${th.id}`)}
+                  </div>
+                </button>
+              )
+            })}
+          </div>
+        </div>
+      </Section>
+
       <Section title={t('set.general')}>
         <Row label={t('set.language')}>
           <Segmented<Lang>
@@ -127,7 +178,7 @@ export default function Settings(): React.JSX.Element | null {
               max={8}
               value={settings.concurrency}
               onChange={(e) => updateSettings({ concurrency: Number(e.target.value) })}
-              className="w-40 accent-violet-500"
+              className="w-40 accent-brand"
             />
             <span className="w-5 text-center text-sm font-bold tabular-nums">{settings.concurrency}</span>
           </div>

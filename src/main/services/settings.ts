@@ -1,12 +1,14 @@
 import { app } from 'electron'
 import { join } from 'path'
 import type { Settings } from '@shared/types'
+import { DEFAULT_THEME, isThemeId } from '@shared/themes'
 import { JsonStore } from './jsonStore'
 
 const defaults = (): Settings => ({
   downloadDir: join(app.getPath('downloads'), 'StreamPull'),
   concurrency: 3,
   lang: 'ar',
+  theme: DEFAULT_THEME,
   defaultQuality: 'best',
   nameTemplate: 'title',
   speedLimit: '',
@@ -28,6 +30,7 @@ export function updateSettings(patch: Partial<Settings>): Settings {
   if (typeof patch.downloadDir === 'string' && patch.downloadDir.trim()) s.downloadDir = patch.downloadDir
   if (typeof patch.concurrency === 'number') s.concurrency = Math.min(8, Math.max(1, Math.round(patch.concurrency)))
   if (patch.lang === 'ar' || patch.lang === 'en') s.lang = patch.lang
+  if (isThemeId(patch.theme)) s.theme = patch.theme
   if (typeof patch.defaultQuality === 'string') s.defaultQuality = patch.defaultQuality
   if (patch.nameTemplate === 'title' || patch.nameTemplate === 'uploader-title' || patch.nameTemplate === 'title-id')
     s.nameTemplate = patch.nameTemplate

@@ -29,6 +29,7 @@ import {
   retry
 } from './services/queue'
 import { getSettings, updateSettings } from './services/settings'
+import { applyWindowTheme } from './windowTheme'
 import { analyze } from './services/ytdlp'
 import { isValidUrl } from './services/ytdlpArgs'
 
@@ -74,6 +75,7 @@ export function registerIpc(getWin: () => BrowserWindow | null): void {
   ipcMain.handle('settings:get', () => getSettings())
   ipcMain.handle('settings:set', (_e, patch: Partial<Settings>) => {
     const s = updateSettings(patch ?? {})
+    if (patch?.theme) applyWindowTheme(getWin(), s.theme)
     repump()
     return s
   })
