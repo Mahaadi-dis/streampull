@@ -7,7 +7,7 @@ import { usesBrowserLogin } from '@shared/accounts'
 import { removeCookieFile, writeCookieFile } from './browser'
 import { getSettings } from './settings'
 import { killTree, startDownload, type RunningDownload } from './ytdlp'
-import { classifyError, isAudioQuality, lastErrorLine } from './ytdlpArgs'
+import { classifyError, isAudioQuality, lastErrorLine } from '@shared/ytdlpArgs'
 
 type Emit = (item: DownloadItem) => void
 

@@ -7,7 +7,7 @@
 **Download videos and audio from almost any site — in a modern desktop app with switchable color themes.**
 
 ![License: MIT](https://img.shields.io/badge/license-MIT-8b5cf6)
-![Platforms](https://img.shields.io/badge/Windows-available%20%C2%B7%20macOS%20%7C%20Linux%20%7C%20Android-coming%20soon-7c3aed)
+![Platforms](https://img.shields.io/badge/Windows-available%20%C2%B7%20macOS%20%7C%20Linux-coming%20soon-7c3aed)
 ![Built with](https://img.shields.io/badge/built%20with-Electron%20%2B%20yt--dlp%20%2B%20FFmpeg-c084fc)
 
 [العربية](README.ar.md) · English
@@ -24,7 +24,8 @@ StreamPull is a desktop alternative to browser extensions like *Video DownloadHe
 
 - **Paste a link, pick a quality** — every available resolution with an estimated size, or audio only (MP3 / M4A).
 - **Built‑in browser that detects media** — play a video on any page and it shows up in the *Detected media* panel
-  (direct files, HLS and DASH streams). Your logins are kept and reused for the download.
+  (direct files, HLS and DASH streams). Your logins are kept and reused for the download. It has **tabs**, an **ad blocker**,
+  **bookmarks** and **history**.
 - **Playlists** — select, search and download many items at once.
 - **YouTube channels** — paste a channel link, choose **Videos**, **Shorts** or **Live streams**, then pick everything
   or just the ones you want (live/upcoming streams are skipped automatically).
@@ -55,7 +56,7 @@ Get the latest Windows build from the [**Releases**](../../releases) page:
 | `StreamPull-Setup-x.y.z.exe` | Installer (adds a Start menu entry, uninstaller) |
 | `StreamPull-x.y.z-portable.exe` | Portable — run it from anywhere, nothing to install |
 
-> **Coming soon:** macOS, Linux and Android versions are planned for the next few days.
+> **Coming soon:** macOS and Linux versions are planned for the next few days.
 > Star or watch the repository to get notified when they land.
 
 **The builds are not code‑signed yet**, so Windows SmartScreen may warn you the first time:
@@ -92,13 +93,14 @@ renderer (React)  ──IPC──▶  main process (Electron)  ──spawn──
 - `src/preload` — the small, typed `window.api` bridge (context isolation on, sandbox on).
 - `src/renderer` — React UI, Tailwind, Framer Motion, Zustand, Arabic/English strings.
 - The embedded browser runs in its own isolated session with **all permissions denied**, and the web content has no access to the app API.
+- On start-up the app asks GitHub for the latest release and shows a notice if there is a newer one (turn it off in Settings). Nothing is downloaded or installed automatically.
 
 ## Limitations
 
 - **DRM‑protected** services (Netflix, Disney+, …) are not supported and never will be.
 - Signing in with a **Google account** inside the built‑in browser is often blocked by Google.
-- The built‑in browser has a single tab for now.
-- macOS, Linux and Android versions are coming soon (see above).
+- The ad blocker needs an internet connection the first time to download its filter lists (EasyList / EasyPrivacy, refreshed weekly); until then a small built-in list of ad networks is used.
+- macOS and Linux versions are coming soon (see above).
 
 ## Legal
 

@@ -40,6 +40,7 @@ const api: Api = {
   showInFolder: (id) => invoke('shell:showInFolder', id),
   openDownloadDir: () => invoke('shell:openDownloadDir'),
   openExternal: (url) => invoke('shell:openExternal', url),
+  checkForUpdate: () => invoke('update:check'),
 
   browserSetBounds: (b) => invoke('browser:bounds', b),
   browserNavigate: (input) => invoke('browser:navigate', input),
@@ -49,11 +50,24 @@ const api: Api = {
   browserStop: () => invoke('browser:stop'),
   browserHome: () => invoke('browser:home'),
   browserState: () => invoke('browser:state'),
+  browserTabs: () => invoke('browser:tabs'),
+  browserNewTab: (input) => invoke('browser:newTab', input),
+  browserSwitchTab: (id) => invoke('browser:switchTab', id),
+  browserCloseTab: (id) => invoke('browser:closeTab', id),
   listSniffed: () => invoke('browser:sniffed'),
   clearSniffed: () => invoke('browser:clearSniffed'),
   onBrowserNav: (cb) => on('browser:nav', cb),
   onSniffed: (cb) => on('browser:sniff', cb),
-  onSniffCleared: (cb) => on('browser:sniffCleared', () => cb())
+  onSniffList: (cb) => on('browser:sniffList', cb),
+  onBrowserTabs: (cb) => on('browser:tabs', cb),
+
+  bookmarksList: () => invoke('bookmarks:list'),
+  bookmarkToggle: (url, title) => invoke('bookmarks:toggle', url, title),
+  bookmarkRemove: (id) => invoke('bookmarks:remove', id),
+  visitsList: () => invoke('visits:list'),
+  visitRemove: (url) => invoke('visits:remove', url),
+  visitsClear: () => invoke('visits:clear'),
+  browserClearSiteData: () => invoke('browser:clearSiteData')
 }
 
 contextBridge.exposeInMainWorld('api', api)

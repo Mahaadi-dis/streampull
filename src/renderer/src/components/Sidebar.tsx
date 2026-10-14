@@ -2,6 +2,7 @@ import { motion } from 'framer-motion'
 import { Download, Globe, Home, Library, Settings as Cog } from 'lucide-react'
 import { useT } from '@/i18n'
 import { useApp, type Page } from '@/store/app'
+import { UpdateCard } from './UpdateCard'
 
 const items: { page: Page; icon: typeof Home; key: string }[] = [
   { page: 'home', icon: Home, key: 'nav.home' },
@@ -62,7 +63,9 @@ export function Sidebar(): React.JSX.Element {
         })}
       </nav>
 
-      <div className="mt-auto rounded-xl border border-line bg-white/[0.03] px-3 py-2.5 text-xs">
+      <div className="mt-auto space-y-2.5">
+      <UpdateCard />
+      <div className="rounded-xl border border-line bg-white/[0.03] px-3 py-2.5 text-xs">
         <div className="flex items-center gap-2">
           <span
             className={`h-2 w-2 rounded-full ${
@@ -88,6 +91,7 @@ export function Sidebar(): React.JSX.Element {
             yt-dlp {binary.version}
           </div>
         )}
+      </div>
       </div>
     </aside>
   )

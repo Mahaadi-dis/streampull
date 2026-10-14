@@ -14,6 +14,10 @@ export interface Settings {
   nameTemplate: NameTemplate
   speedLimit: string // '' = unlimited, otherwise yt-dlp rate like "2M"
   notifications: boolean
+  /** Block known ad hosts in the embedded browser. */
+  adBlock: boolean
+  /** Ask GitHub on start-up whether a newer release exists (nothing is downloaded automatically). */
+  checkUpdates: boolean
 }
 
 /** 'best' | '2160' | '1080' | ... | 'mp3' | 'm4a' */
@@ -169,9 +173,33 @@ export interface BrowserNav {
   canGoForward: boolean
 }
 
+/** One open browser tab, as listed in the tab strip. */
+export interface BrowserTab {
+  id: string
+  title: string
+  url: string
+  loading: boolean
+  /** Videos detected on the page so far. */
+  media: number
+  /** Ad requests blocked on the page so far. */
+  blocked: number
+}
+
+export interface BrowserTabsState {
+  tabs: BrowserTab[]
+  activeId: string
+}
+
 export interface BrowserBounds {
   x: number
   y: number
   width: number
   height: number
+}
+
+/** A newer StreamPull release than the one running. */
+export interface UpdateInfo {
+  version: string
+  current: string
+  url: string
 }

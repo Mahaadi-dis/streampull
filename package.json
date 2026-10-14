@@ -1,7 +1,7 @@
 {
   "name": "streampull",
   "productName": "StreamPull",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "Download videos and audio from almost any site. Modern desktop app built on yt-dlp and FFmpeg.",
   "main": "./out/main/index.js",
   "author": {
@@ -23,6 +23,7 @@
   "dependencies": {
     "@fontsource/ibm-plex-sans-arabic": "^5.3.0",
     "@fontsource/inter": "^5.3.0",
+    "@ghostery/adblocker-electron": "^2.20.1",
     "framer-motion": "^14.2.0",
     "lucide-react": "^1.56.0",
     "react": "^19.3.0",

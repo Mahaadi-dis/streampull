@@ -46,6 +46,14 @@ export function outputNameFor(fileName: string | null | undefined, t: NameTempla
   return clean ? clean.replace(/%/g, '%%') : outputName(t)
 }
 
+/** Turn whatever was typed in a browser address bar into a URL (or a search). */
+export function toBrowserUrl(input: string): string {
+  const t = input.trim()
+  if (isValidUrl(t)) return t
+  if (/^[^\s/]+\.[a-z]{2,}(:\d+)?([/?#]\S*)?$/i.test(t)) return `https://${t}`
+  return `https://duckduckgo.com/?q=${encodeURIComponent(t)}`
+}
+
 export const PROGRESS_PREFIX = 'VGP|'
 export const POST_PREFIX = 'VGPP|'
 export const FILE_PREFIX = 'VGFILE|'

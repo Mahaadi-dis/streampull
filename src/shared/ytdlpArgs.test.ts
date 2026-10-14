@@ -144,3 +144,12 @@ describe('channels', () => {
     expect(i.entries.map((e) => e.liveStatus)).toEqual(['live', 'upcoming', null])
   })
 })
+
+describe('toBrowserUrl', () => {
+  it('turns address-bar input into a URL or a search', async () => {
+    const { toBrowserUrl } = await import('./ytdlpArgs')
+    expect(toBrowserUrl('https://a.com/x')).toBe('https://a.com/x')
+    expect(toBrowserUrl('example.com/page')).toBe('https://example.com/page')
+    expect(toBrowserUrl('cat videos')).toBe('https://duckduckgo.com/?q=cat%20videos')
+  })
+})

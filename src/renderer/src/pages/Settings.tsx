@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Check, FolderOpen, Info, Loader2, RefreshCw } from 'lucide-react'
+import { Check, FolderOpen, Info, Loader2, RefreshCw, Trash2 } from 'lucide-react'
 import { THEMES } from '@shared/themes'
 import type { Lang, NameTemplate } from '@shared/types'
 import { useT } from '@/i18n'
@@ -55,7 +55,7 @@ function Section({ title, children }: { title: string; children: React.ReactNode
 
 export default function Settings(): React.JSX.Element | null {
   const t = useT()
-  const { settings, updateSettings, binary } = useApp()
+  const { settings, updateSettings, binary, toast } = useApp()
   const [updating, setUpdating] = useState(false)
   if (!settings) return null
 
@@ -151,6 +151,22 @@ export default function Settings(): React.JSX.Element | null {
             </button>
           </div>
         </Row>
+        <Row label={t('set.checkUpdates')} hint={t('set.checkUpdatesHint')}>
+          <button
+            role="switch"
+            aria-checked={settings.checkUpdates}
+            onClick={() => updateSettings({ checkUpdates: !settings.checkUpdates })}
+            className={`relative h-7 w-12 rounded-full transition ${
+              settings.checkUpdates ? 'bg-gradient-to-r from-brand-deep to-brand-pink shadow-glow' : 'bg-white/10'
+            }`}
+          >
+            <span
+              className={`absolute top-1 h-5 w-5 rounded-full bg-white shadow transition-all ${
+                settings.checkUpdates ? 'start-6' : 'start-1'
+              }`}
+            />
+          </button>
+        </Row>
         <Row label={t('set.notifications')}>
           <button
             role="switch"
@@ -221,6 +237,48 @@ export default function Settings(): React.JSX.Element | null {
               </option>
             ))}
           </select>
+        </Row>
+      </Section>
+
+      <Section title={t('set.browser')}>
+        <Row label={t('set.adBlock')} hint={t('set.adBlockHint')}>
+          <button
+            role="switch"
+            aria-checked={settings.adBlock}
+            onClick={() => updateSettings({ adBlock: !settings.adBlock })}
+            className={`relative h-7 w-12 rounded-full transition ${
+              settings.adBlock ? 'bg-gradient-to-r from-brand-deep to-brand-pink shadow-glow' : 'bg-white/10'
+            }`}
+          >
+            <span
+              className={`absolute top-1 h-5 w-5 rounded-full bg-white shadow transition-all ${
+                settings.adBlock ? 'start-6' : 'start-1'
+              }`}
+            />
+          </button>
+        </Row>
+        <Row label={t('set.clearHistory')} hint={t('set.clearHistoryHint')}>
+          <button
+            className="btn-ghost"
+            onClick={async () => {
+              await window.api.visitsClear()
+              toast(t('set.cleared'), 'ok')
+            }}
+          >
+            <Trash2 size={16} /> {t('set.clear')}
+          </button>
+        </Row>
+        <Row label={t('set.clearSiteData')} hint={t('set.clearSiteDataHint')}>
+          <button
+            className="btn-ghost"
+            onClick={async () => {
+              if (!window.confirm(t('set.clearSiteDataConfirm'))) return
+              await window.api.browserClearSiteData()
+              toast(t('set.cleared'), 'ok')
+            }}
+          >
+            <Trash2 size={16} /> {t('set.clear')}
+          </button>
         </Row>
       </Section>
 

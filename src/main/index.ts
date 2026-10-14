@@ -2,6 +2,7 @@ import { app, BrowserWindow, shell } from 'electron'
 import { join } from 'path'
 import { registerIpc } from './ipc'
 import { ensureBinaries } from './services/binaries'
+import { flushBrowserData, initBrowserData } from './services/browserData'
 import { flushHistory, initHistory } from './services/history'
 import { killAll } from './services/queue'
 import { flushSettings, getSettings, initSettings } from './services/settings'
@@ -34,6 +35,7 @@ if (!app.requestSingleInstanceLock()) {
     app.setAppUserModelId(APP_ID)
     initSettings()
     initHistory()
+    initBrowserData()
     registerIpc(() => win)
     createWindow()
     void ensureBinaries()
@@ -46,6 +48,7 @@ if (!app.requestSingleInstanceLock()) {
     killAll()
     flushSettings()
     flushHistory()
+    flushBrowserData()
   })
 
   app.on('window-all-closed', () => {

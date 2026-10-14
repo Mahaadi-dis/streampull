@@ -14,7 +14,9 @@ const settings: Settings = {
   defaultQuality: 'best',
   nameTemplate: 'title',
   speedLimit: '',
-  notifications: true
+  notifications: true,
+  adBlock: true,
+  checkUpdates: true
 }
 
 const base = (i: number, o: Partial<DownloadItem>): DownloadItem => ({
@@ -185,6 +187,7 @@ export const mockApi: Api = {
   showInFolder: noop,
   openDownloadDir: noop,
   openExternal: noop,
+  checkForUpdate: async () => null,
   browserSetBounds: noop,
   browserNavigate: noop,
   browserBack: noop,
@@ -200,5 +203,23 @@ export const mockApi: Api = {
   clearSniffed: noop,
   onBrowserNav: sub,
   onSniffed: sub,
-  onSniffCleared: sub
+  onSniffList: sub,
+  browserTabs: async () => ({ tabs: [], activeId: '' }),
+  browserNewTab: noop,
+  browserSwitchTab: noop,
+  browserCloseTab: noop,
+  onBrowserTabs: sub,
+  bookmarksList: async () => [
+    { id: 'b1', url: 'https://www.youtube.com/', title: 'YouTube', addedAt: 3 },
+    { id: 'b2', url: 'https://vimeo.com/watch', title: 'Vimeo — فيديوهات', addedAt: 2 }
+  ],
+  bookmarkToggle: async () => [],
+  bookmarkRemove: async () => [],
+  visitsList: async () => [
+    { url: 'https://www.dailymotion.com/', title: 'Dailymotion', visitedAt: Date.now() - 3_600_000, visits: 3 },
+    { url: 'https://x.com/home', title: 'X', visitedAt: Date.now() - 86_400_000, visits: 1 }
+  ],
+  visitRemove: async () => [],
+  visitsClear: noop,
+  browserClearSiteData: noop
 }

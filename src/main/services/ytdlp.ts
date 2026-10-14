@@ -1,27 +1,22 @@
 import { spawn, type ChildProcess } from 'child_process'
-import type { AnalyzeResult, DownloadItem, ErrorCode, Settings } from '@shared/types'
-import { parseAccountUrl, usesBrowserLogin, type ParsedAccountUrl } from '@shared/accounts'
-import { parseYoutubeChannelUrl, type ParsedChannelUrl } from '@shared/channel'
+import type { AnalyzeResult, DownloadItem, Settings } from '@shared/types'
+import { analyzeWith, type RawResult, type RunOptions } from '@shared/analyze'
+import { usesBrowserLogin } from '@shared/accounts'
 import { ffmpegPath, getBinaryState, ytdlpPath } from './binaries'
 import { browserUserAgent, removeCookieFile, writeCookieFile } from './browser'
 import {
-  CHANNEL_LIST_CAP,
-  CHANNEL_ROOT_PROBE,
   POST_TEMPLATE,
-  channelAvatar,
-  channelTabsFromRoot,
   PROGRESS_TEMPLATE,
   classifyError,
   formatArgs,
   isPostprocessLine,
   isValidUrl,
-  mapInfo,
   outputNameFor,
   parseFileLine,
   parseProgressLine,
   wantsSingle,
   type ProgressUpdate
-} from './ytdlpArgs'
+} from '@shared/ytdlpArgs'
 
 const BASE = ['--no-colors', '--no-warnings', '--ignore-config', '--encoding', 'utf-8']
 
@@ -61,13 +56,7 @@ export async function analyze(url: string, cookieUrl?: string | null): Promise<A
   const cookieSrc = cookieUrl ?? (usesBrowserLogin(url) ? url : null)
   const cookieFile = cookieSrc ? await writeCookieFile([cookieSrc, url]) : null
   try {
-    const channel = parseYoutubeChannelUrl(url)
-    const account = channel ? null : parseAccountUrl(url)
-    const r = channel
-      ? await analyzeChannel(channel, url, cookieFile)
-      : account
-        ? await analyzeAccount(account, url, cookieFile)
-        : await analyzeUrl(url, cookieFile)
+    const r = await analyzeWith((u, o) => runJson(u, cookieFile, o), url)
     // Downloads of what was listed must use the same session.
     const effective = cookieUrl ?? (cookieFile ? url : null)
     return r.ok && effective ? { ok: true, info: { ...r.info, cookieUrl: effective } } : r
@@ -76,84 +65,7 @@ export async function analyze(url: string, cookieUrl?: string | null): Promise<A
   }
 }
 
-type RawResult = { ok: true; raw: Record<string, unknown> } | { ok: false; error: ErrorCode; detail?: string }
-
-async function analyzeUrl(url: string, cookieFile: string | null): Promise<AnalyzeResult> {
-  const r = await runJson(url, cookieFile, { timeoutMs: 90_000 })
-  return r.ok ? { ok: true, info: mapInfo(url, r.raw) } : r
-}
-
-const ACCOUNT_LIST_CAP = 300
-
-/** A TikTok / Instagram profile: list its posts. */
-async function analyzeAccount(
-  acc: ParsedAccountUrl,
-  originalUrl: string,
-  cookieFile: string | null
-): Promise<AnalyzeResult> {
-  const list = await runJson(acc.base, cookieFile, { timeoutMs: 300_000, playlistEnd: ACCOUNT_LIST_CAP })
-  if (!list.ok) return list
-  const info = mapInfo(acc.base, list.raw)
-  if (!info.isPlaylist) return analyzeUrl(originalUrl, cookieFile)
-  const name = `@${acc.handle}`
-  return {
-    ok: true,
-    info: {
-      ...info,
-      title: name,
-      uploader: name,
-      site: acc.platform === 'tiktok' ? 'TikTok' : 'Instagram',
-      isPlaylist: true,
-      channel: {
-        kind: 'account',
-        tabs: [{ id: 'videos', url: acc.base }],
-        activeTab: 'videos',
-        truncated: info.entries.length >= ACCOUNT_LIST_CAP
-      }
-    }
-  }
-}
-
-const str = (v: unknown): string | null => (typeof v === 'string' && v.trim() ? v.trim() : null)
-
-/** A YouTube channel: find its tabs, then list the requested one (Videos by default). */
-async function analyzeChannel(
-  ch: ParsedChannelUrl,
-  originalUrl: string,
-  cookieFile: string | null
-): Promise<AnalyzeResult> {
-  const root = await runJson(ch.base, cookieFile, { timeoutMs: 60_000, playlistEnd: CHANNEL_ROOT_PROBE })
-  if (!root.ok) return root
-
-  const tabs = channelTabsFromRoot(root.raw, ch.base)
-  const wanted = ch.tab && tabs.some((t) => t.id === ch.tab) ? ch.tab : null
-  const active = tabs.find((t) => t.id === (wanted ?? 'videos')) ?? tabs[0]
-  if (!active) return analyzeUrl(originalUrl, cookieFile)
-
-  const list = await runJson(active.url, cookieFile, { timeoutMs: 300_000, playlistEnd: CHANNEL_LIST_CAP })
-  if (!list.ok) return list
-
-  const info = mapInfo(active.url, list.raw)
-  const name = str(root.raw.uploader) ?? str(root.raw.channel) ?? info.title
-  return {
-    ok: true,
-    info: {
-      ...info,
-      title: name,
-      uploader: name,
-      thumbnail: channelAvatar(root.raw.thumbnails) ?? info.thumbnail,
-      site: 'Youtube',
-      isPlaylist: true,
-      channel: { tabs, activeTab: active.id, truncated: info.entries.length >= CHANNEL_LIST_CAP }
-    }
-  }
-}
-
-function runJson(
-  url: string,
-  cookieFile: string | null,
-  opts: { timeoutMs: number; playlistEnd?: number }
-): Promise<RawResult> {
+function runJson(url: string, cookieFile: string | null, opts: RunOptions): Promise<RawResult> {
   const args = [...BASE, '-J', '--flat-playlist', '--socket-timeout', '20']
   if (opts.playlistEnd) args.push('--playlist-end', String(opts.playlistEnd))
   if (cookieFile) args.push('--cookies', cookieFile)

@@ -9,7 +9,9 @@ import type {
   MediaInfo,
   Settings,
   BrowserNav,
-  SniffItem
+  BrowserTabsState,
+  SniffItem,
+  UpdateInfo
 } from '@shared/types'
 
 export type Page = 'home' | 'browser' | 'downloads' | 'library' | 'settings'
@@ -35,6 +37,9 @@ interface AppState {
   analysis: Analysis
   toasts: Toast[]
   nav: BrowserNav
+  tabs: BrowserTabsState
+  /** A newer release is available (hidden once dismissed, until the next launch). */
+  update: UpdateInfo | null
   sniffed: SniffItem[]
   /** Channel tab currently being loaded (Videos / Shorts / Live). */
   tabLoading: ChannelTab['id'] | null
@@ -50,9 +55,11 @@ interface AppState {
   refreshHistory: () => Promise<void>
   toast: (text: string, tone?: Toast['tone']) => void
   dismissToast: (id: number) => void
+  dismissUpdate: () => void
 }
 
 let toastSeq = 1
+let dismissedUpdate = ''
 let initialized = false
 
 export const useApp = create<AppState>((set, get) => ({
@@ -64,6 +71,8 @@ export const useApp = create<AppState>((set, get) => ({
   analysis: { status: 'idle' },
   toasts: [],
   nav: { url: '', title: '', loading: false, canGoBack: false, canGoForward: false },
+  tabs: { tabs: [], activeId: '' },
+  update: null,
   sniffed: [],
   tabLoading: null,
 
@@ -71,13 +80,14 @@ export const useApp = create<AppState>((set, get) => ({
     if (initialized) return
     initialized = true
     const api = window.api
-    const [settings, binary, queue, history, nav, sniffed] = await Promise.all([
+    const [settings, binary, queue, history, nav, sniffed, tabs] = await Promise.all([
       api.getSettings(),
       api.getBinaryState(),
       api.listQueue(),
       api.listHistory(),
       api.browserState(),
-      api.listSniffed()
+      api.listSniffed(),
+      api.browserTabs()
     ])
     set({
       settings,
@@ -85,6 +95,7 @@ export const useApp = create<AppState>((set, get) => ({
       history,
       nav,
       sniffed,
+      tabs,
       downloads: Object.fromEntries(queue.map((d) => [d.id, d]))
     })
     api.onBinaryState((binary) => set({ binary }))
@@ -92,7 +103,14 @@ export const useApp = create<AppState>((set, get) => ({
     api.onSniffed((item) =>
       set((st) => (st.sniffed.some((x) => x.id === item.id) ? st : { sniffed: [...st.sniffed, item] }))
     )
-    api.onSniffCleared(() => set({ sniffed: [] }))
+    api.onBrowserTabs((tabs) => set({ tabs }))
+    const checkUpdate = async (): Promise<void> => {
+      const u = await api.checkForUpdate().catch(() => null)
+      set({ update: u && u.version !== dismissedUpdate ? u : null })
+    }
+    void checkUpdate()
+    setInterval(() => void checkUpdate(), 6 * 3600 * 1000)
+    api.onSniffList((items) => set({ sniffed: items }))
     api.onQueueUpdate((item) => {
       const prev = get().downloads[item.id]
       set((s) => ({ downloads: { ...s.downloads, [item.id]: { ...item } } }))
@@ -155,5 +173,9 @@ export const useApp = create<AppState>((set, get) => ({
     set((s) => ({ toasts: [...s.toasts, { id, text, tone }] }))
     setTimeout(() => get().dismissToast(id), 3200)
   },
-  dismissToast: (id) => set((s) => ({ toasts: s.toasts.filter((t) => t.id !== id) }))
+  dismissToast: (id) => set((s) => ({ toasts: s.toasts.filter((t) => t.id !== id) })),
+  dismissUpdate: () => {
+    dismissedUpdate = get().update?.version ?? ''
+    set({ update: null })
+  }
 }))

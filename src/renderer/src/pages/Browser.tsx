@@ -1,56 +1,72 @@
-import { useEffect, useLayoutEffect, useRef, useState } from 'react'
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
 import {
   ArrowLeft,
   ArrowRight,
-  Download,
-  FileVideo,
+  BookMarked,
+  Clock,
   Globe,
+  History,
   Home as HomeIcon,
   Loader2,
   Radio,
   RotateCw,
   ScanSearch,
   ShieldCheck,
-  Trash2,
+  ShieldOff,
+  Star,
   X
 } from 'lucide-react'
 import type { SniffItem } from '@shared/types'
+import { isBookmarked, suggest } from '@shared/bookmarks'
 import { useT } from '@/i18n'
-import { formatBytes } from '@/lib/format'
 import { useApp } from '@/store/app'
+import { useBrowserLists } from '@/lib/useBrowserLists'
+import BrowserPanel, { type PanelTab } from '@/components/browser/BrowserPanel'
+import StartPage from '@/components/browser/StartPage'
+import TabStrip from '@/components/browser/TabStrip'
 
-const SITES: { name: string; url: string; color: string }[] = [
-  { name: 'YouTube', url: 'https://www.youtube.com', color: 'from-red-500 to-rose-600' },
-  { name: 'X', url: 'https://x.com', color: 'from-slate-500 to-slate-800' },
-  { name: 'Instagram', url: 'https://www.instagram.com', color: 'from-fuchsia-500 to-orange-400' },
-  { name: 'TikTok', url: 'https://www.tiktok.com', color: 'from-cyan-400 to-pink-500' },
-  { name: 'Facebook', url: 'https://www.facebook.com', color: 'from-blue-500 to-indigo-600' },
-  { name: 'Vimeo', url: 'https://vimeo.com', color: 'from-sky-400 to-blue-600' },
-  { name: 'Dailymotion', url: 'https://www.dailymotion.com', color: 'from-blue-600 to-violet-600' },
-  { name: 'Reddit', url: 'https://www.reddit.com', color: 'from-orange-500 to-red-600' },
-  { name: 'Twitch', url: 'https://www.twitch.tv', color: 'from-purple-500 to-violet-700' },
-  { name: 'SoundCloud', url: 'https://soundcloud.com', color: 'from-orange-400 to-orange-600' }
-]
+/** The first tab is opened once per app run (a ref would not survive React's dev double-mount). */
+let firstTabRequested = false
 
 export default function BrowserPage(): React.JSX.Element {
   const t = useT()
-  const { nav, sniffed, analyze, setPage, enqueue, toast } = useApp()
+  const { nav, tabs, sniffed, settings, updateSettings, analyze, setPage, enqueue, toast } = useApp()
   const api = window.api
   const hostRef = useRef<HTMLDivElement>(null)
   const [panel, setPanel] = useState(false)
+  const [panelTab, setPanelTab] = useState<PanelTab>('media')
   const [addr, setAddr] = useState('')
   const [editing, setEditing] = useState(false)
+  const [sel, setSel] = useState(-1)
+  const lists = useBrowserLists(nav.url)
   const start = !nav.url
+  const activeTab = tabs.tabs.find((x) => x.id === tabs.activeId)
+  const adBlock = settings?.adBlock ?? true
+
+  const suggestions = useMemo(
+    () => (editing && addr.trim() && addr !== nav.url ? suggest(lists.bookmarks, lists.visits, addr) : []),
+    [editing, addr, nav.url, lists.bookmarks, lists.visits]
+  )
+  // The page lives in a native view that paints over HTML, so it steps aside while suggestions are shown.
+  const overlay = suggestions.length > 0
+  const starred = !!nav.url && isBookmarked(lists.bookmarks, nav.url)
 
   useEffect(() => {
     if (!editing) setAddr(nav.url)
   }, [nav.url, editing])
 
+  useEffect(() => {
+    if (!firstTabRequested && tabs.tabs.length === 0) {
+      firstTabRequested = true
+      void api.browserNewTab()
+    }
+  }, [api, tabs.tabs.length])
+
   // Keep the native view glued to the placeholder rectangle.
   useLayoutEffect(() => {
     const el = hostRef.current
-    if (start || !el) {
+    if (start || overlay || !el) {
       void api.browserSetBounds(null)
       return
     }
@@ -66,7 +82,7 @@ export default function BrowserPage(): React.JSX.Element {
       ro.disconnect()
       window.removeEventListener('resize', push)
     }
-  }, [start, panel, api])
+  }, [start, overlay, panel, api])
 
   // Hide the view when the page unmounts (also done in the store for instant hiding).
   useEffect(() => () => void api.browserSetBounds(null), [api])
@@ -80,6 +96,14 @@ export default function BrowserPage(): React.JSX.Element {
     if (!nav.url) return
     void analyze(nav.url, nav.url)
     setPage('home')
+  }
+
+  const showPanel = (tab: PanelTab): void => {
+    if (panel && panelTab === tab) setPanel(false)
+    else {
+      setPanelTab(tab)
+      setPanel(true)
+    }
   }
 
   const download = async (s: SniffItem, index: number): Promise<void> => {
@@ -101,9 +125,12 @@ export default function BrowserPage(): React.JSX.Element {
   }
 
   const btn = 'btn-icon disabled:opacity-30'
+  const blocked = activeTab?.blocked ?? 0
 
   return (
-    <div className="flex h-[calc(100vh-2.75rem)] flex-col">
+    <div className="-mt-11 flex h-screen flex-col">
+      <TabStrip state={tabs} />
+
       <div className="flex items-center gap-1.5 border-b border-line bg-surface/60 px-3 py-2 backdrop-blur-xl">
         <button className={btn} title={t('br.back')} disabled={!nav.canGoBack} onClick={() => api.browserBack()}>
           <ArrowRight size={18} className="hidden rtl:block" />
@@ -126,11 +153,15 @@ export default function BrowserPage(): React.JSX.Element {
         </button>
 
         <div className="relative mx-1 flex-1">
-          <Globe size={15} className="pointer-events-none absolute start-3 top-1/2 -translate-y-1/2 text-brand-light/70" />
+          {nav.loading ? (
+            <Loader2 size={15} className="pointer-events-none absolute start-3 top-1/2 -translate-y-1/2 animate-spin text-brand-light" />
+          ) : (
+            <Globe size={15} className="pointer-events-none absolute start-3 top-1/2 -translate-y-1/2 text-brand-light/70" />
+          )}
           <input
             dir="ltr"
             style={{ textAlign: 'start' }}
-            className="input !rounded-full !py-2 ps-9 text-sm"
+            className="input !rounded-full !py-2 !pe-11 ps-9 text-sm"
             placeholder={t('br.address')}
             value={addr}
             spellCheck={false}
@@ -138,31 +169,113 @@ export default function BrowserPage(): React.JSX.Element {
               setEditing(true)
               e.currentTarget.select()
             }}
-            onBlur={() => setEditing(false)}
-            onChange={(e) => setAddr(e.target.value)}
+            onBlur={() => {
+              // let a click on a suggestion land before the list disappears
+              setTimeout(() => {
+                setEditing(false)
+                setSel(-1)
+              }, 120)
+            }}
+            onChange={(e) => {
+              setAddr(e.target.value)
+              setSel(-1)
+            }}
             onKeyDown={(e) => {
-              if (e.key === 'Enter') {
-                go(addr)
+              if (e.key === 'ArrowDown' && suggestions.length) {
+                e.preventDefault()
+                setSel((i) => (i + 1) % suggestions.length)
+              } else if (e.key === 'ArrowUp' && suggestions.length) {
+                e.preventDefault()
+                setSel((i) => (i <= 0 ? suggestions.length - 1 : i - 1))
+              } else if (e.key === 'Enter') {
+                go(sel >= 0 && suggestions[sel] ? suggestions[sel].url : addr)
                 e.currentTarget.blur()
-              }
-              if (e.key === 'Escape') {
+              } else if (e.key === 'Escape') {
                 setAddr(nav.url)
                 e.currentTarget.blur()
               }
             }}
           />
-          {nav.loading && (
-            <Loader2 size={15} className="absolute end-3 top-1/2 -translate-y-1/2 animate-spin text-brand-light" />
+          <button
+            disabled={start}
+            title={starred ? t('br.bookmarkRemove') : t('br.bookmarkAdd')}
+            aria-label={starred ? t('br.bookmarkRemove') : t('br.bookmarkAdd')}
+            onClick={() => void lists.toggleBookmark(nav.url, nav.title)}
+            className="absolute end-2 top-1/2 flex h-7 w-7 -translate-y-1/2 items-center justify-center rounded-full text-violet-200/60 transition hover:bg-white/10 disabled:opacity-30"
+          >
+            <Star size={16} className={starred ? 'fill-amber-300 text-amber-300' : ''} />
+          </button>
+
+          {overlay && (
+            <div className="absolute inset-x-0 top-full z-50 mt-2 overflow-hidden rounded-2xl border border-line bg-surface shadow-card">
+              {suggestions.map((s, i) => (
+                <button
+                  key={s.url}
+                  onMouseDown={(e) => {
+                    e.preventDefault()
+                    go(s.url)
+                    setEditing(false)
+                  }}
+                  className={`flex w-full items-center gap-3 px-4 py-2.5 text-start transition ${
+                    i === sel ? 'bg-brand/25' : 'hover:bg-white/5'
+                  }`}
+                >
+                  {s.kind === 'bookmark' ? (
+                    <Star size={14} className="shrink-0 text-amber-300" />
+                  ) : (
+                    <Clock size={14} className="shrink-0 text-brand-light/70" />
+                  )}
+                  <span className="min-w-0 flex-1">
+                    <span className="block truncate text-sm" dir="auto">
+                      {s.title}
+                    </span>
+                    <span className="block truncate text-[11px] text-violet-300/50" dir="ltr">
+                      {s.url}
+                    </span>
+                  </span>
+                </button>
+              ))}
+            </div>
           )}
         </div>
 
+        <button
+          className={`btn-icon relative ${adBlock ? 'text-emerald-300' : 'text-violet-200/50'}`}
+          title={adBlock ? t('br.adblockOn', { n: blocked }) : t('br.adblockOff')}
+          aria-label={t('br.adblock')}
+          aria-pressed={adBlock}
+          onClick={() => void updateSettings({ adBlock: !adBlock })}
+        >
+          {adBlock ? <ShieldCheck size={18} /> : <ShieldOff size={18} />}
+          {adBlock && blocked > 0 && (
+            <span className="absolute -end-1 -top-1 min-w-4 rounded-full bg-emerald-400 px-1 text-center text-[10px] font-bold leading-4 text-emerald-950">
+              {blocked > 99 ? '99+' : blocked}
+            </span>
+          )}
+        </button>
+        <button
+          className={`btn-icon ${panel && panelTab === 'bookmarks' ? 'bg-brand/25 text-white' : ''}`}
+          title={t('br.bookmarks')}
+          aria-label={t('br.bookmarks')}
+          onClick={() => showPanel('bookmarks')}
+        >
+          <BookMarked size={18} />
+        </button>
+        <button
+          className={`btn-icon ${panel && panelTab === 'history' ? 'bg-brand/25 text-white' : ''}`}
+          title={t('br.history')}
+          aria-label={t('br.history')}
+          onClick={() => showPanel('history')}
+        >
+          <History size={18} />
+        </button>
         <button className="btn-ghost !px-3 !py-2" disabled={start} onClick={analyzePage} title={t('br.analyzePageHint')}>
           <ScanSearch size={16} /> {t('br.analyzePage')}
         </button>
         <button
-          onClick={() => setPanel((p) => !p)}
+          onClick={() => showPanel('media')}
           className={`btn !px-3.5 !py-2 ${
-            panel || sniffed.length
+            (panel && panelTab === 'media') || sniffed.length
               ? 'bg-gradient-to-br from-brand-deep to-brand text-white shadow-glow'
               : 'border border-line bg-white/[0.04] text-violet-200/80'
           }`}
@@ -181,35 +294,18 @@ export default function BrowserPage(): React.JSX.Element {
 
       <div className="flex min-h-0 flex-1">
         <div ref={hostRef} className="relative min-w-0 flex-1">
-          {start && (
-            <div className="flex h-full flex-col items-center justify-center overflow-y-auto px-8 py-10 text-center">
-              <div className="mb-5 flex h-20 w-20 animate-float items-center justify-center rounded-3xl bg-gradient-to-br from-brand-deep/50 to-brand-pink/25 text-brand-light shadow-glow">
-                <Globe size={38} />
-              </div>
-              <h1 className="text-2xl font-extrabold">{t('br.startTitle')}</h1>
-              <p className="mt-2 max-w-md text-violet-200/60">{t('br.startHint')}</p>
-              <div className="mt-8 grid grid-cols-5 gap-3">
-                {SITES.map((s) => (
-                  <button
-                    key={s.name}
-                    onClick={() => go(s.url)}
-                    className="group flex w-28 flex-col items-center gap-2 rounded-2xl border border-line bg-white/[0.03] px-2 py-4 transition hover:-translate-y-0.5 hover:border-brand-light/40 hover:bg-white/[0.07] hover:shadow-glow"
-                  >
-                    <span
-                      className={`flex h-11 w-11 items-center justify-center rounded-xl bg-gradient-to-br text-lg font-extrabold text-white shadow-card ${s.color}`}
-                      dir="ltr"
-                    >
-                      {s.name[0]}
-                    </span>
-                    <span className="text-xs font-medium text-violet-100" dir="ltr">
-                      {s.name}
-                    </span>
-                  </button>
-                ))}
-              </div>
-              <div className="mt-8 flex items-center gap-2 text-xs text-violet-300/50">
-                <ShieldCheck size={14} /> {t('br.loginNote')}
-              </div>
+          {(start || overlay) && (
+            <div className="flex h-full flex-col items-center overflow-y-auto px-8 py-10 text-center">
+              {start && (
+                <>
+                  <div className="mb-5 flex h-20 w-20 animate-float items-center justify-center rounded-3xl bg-gradient-to-br from-brand-deep/50 to-brand-pink/25 text-brand-light shadow-glow">
+                    <Globe size={38} />
+                  </div>
+                  <h1 className="text-2xl font-extrabold">{t('br.startTitle')}</h1>
+                  <p className="mb-8 mt-2 max-w-md text-violet-200/60">{t('br.startHint')}</p>
+                  <StartPage onOpen={go} bookmarks={lists.bookmarks} visits={lists.visits} />
+                </>
+              )}
             </div>
           )}
         </div>
@@ -224,66 +320,21 @@ export default function BrowserPage(): React.JSX.Element {
               transition={{ duration: 0.2 }}
               className="shrink-0 overflow-hidden border-s border-line bg-surface/70 backdrop-blur-xl"
             >
-              <div className="flex h-full w-[340px] flex-col">
-                <div className="flex items-center justify-between px-4 py-3">
-                  <h2 className="font-bold">{t('br.media')}</h2>
-                  <div className="flex items-center gap-1">
-                    {sniffed.length > 0 && (
-                      <button className="btn-icon h-8 w-8" title={t('br.clear')} onClick={() => api.clearSniffed()}>
-                        <Trash2 size={15} />
-                      </button>
-                    )}
-                    <button className="btn-icon h-8 w-8" onClick={() => setPanel(false)}>
-                      <X size={16} />
-                    </button>
-                  </div>
-                </div>
-
-                <div className="min-h-0 flex-1 space-y-2.5 overflow-y-auto px-3 pb-4">
-                  {sniffed.length === 0 ? (
-                    <div className="flex flex-col items-center px-4 py-16 text-center">
-                      <div className="mb-3 flex h-14 w-14 items-center justify-center rounded-2xl bg-white/5 text-brand-light/70">
-                        <Radio size={26} />
-                      </div>
-                      <div className="font-semibold">{t('br.mediaEmpty')}</div>
-                      <div className="mt-1 text-xs text-violet-200/50">{t('br.mediaEmptyHint')}</div>
-                    </div>
-                  ) : (
-                    sniffed.map((s, i) => (
-                      <motion.div
-                        key={s.id}
-                        initial={{ opacity: 0, x: 12 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        className="rounded-xl border border-line bg-white/[0.04] p-3"
-                      >
-                        <div className="flex items-start gap-3">
-                          <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-gradient-to-br from-brand-deep/60 to-brand/30 text-brand-light">
-                            <FileVideo size={19} />
-                          </span>
-                          <div className="min-w-0 flex-1">
-                            <div className="truncate text-sm font-semibold" dir="auto" title={s.pageTitle || nav.title}>
-                              {s.pageTitle || nav.title || s.host}
-                            </div>
-                            <div className="mt-1 flex flex-wrap items-center gap-1.5 text-[11px] text-violet-300/70">
-                              <span className="rounded-md bg-brand/25 px-1.5 py-0.5 font-bold uppercase text-brand-light" dir="ltr">
-                                {s.ext}
-                              </span>
-                              <span>{t(`br.kind.${s.kind}`)}</span>
-                              {s.size ? <span dir="ltr">{formatBytes(s.size)}</span> : null}
-                            </div>
-                            <div className="mt-1 truncate text-[11px] text-violet-300/40" dir="ltr">
-                              {s.host}
-                            </div>
-                          </div>
-                        </div>
-                        <button className="btn-primary mt-3 w-full !py-2" onClick={() => download(s, i)}>
-                          <Download size={16} /> {t('br.download')}
-                        </button>
-                      </motion.div>
-                    ))
-                  )}
-                </div>
-              </div>
+              <BrowserPanel
+                tab={panelTab}
+                onTab={setPanelTab}
+                onClose={() => setPanel(false)}
+                navTitle={nav.title}
+                sniffed={sniffed}
+                onDownload={download}
+                onClearMedia={() => void api.clearSniffed()}
+                bookmarks={lists.bookmarks}
+                visits={lists.visits}
+                onOpen={go}
+                onRemoveBookmark={(id) => void lists.removeBookmark(id)}
+                onRemoveVisit={(url) => void lists.removeVisit(url)}
+                onClearVisits={() => void lists.clearVisits()}
+              />
             </motion.aside>
           )}
         </AnimatePresence>

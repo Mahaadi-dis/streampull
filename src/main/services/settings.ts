@@ -12,7 +12,9 @@ const defaults = (): Settings => ({
   defaultQuality: 'best',
   nameTemplate: 'title',
   speedLimit: '',
-  notifications: true
+  notifications: true,
+  adBlock: true,
+  checkUpdates: true
 })
 
 let store: JsonStore<Settings>
@@ -37,6 +39,8 @@ export function updateSettings(patch: Partial<Settings>): Settings {
   if (typeof patch.speedLimit === 'string' && (patch.speedLimit === '' || RATE.test(patch.speedLimit)))
     s.speedLimit = patch.speedLimit
   if (typeof patch.notifications === 'boolean') s.notifications = patch.notifications
+  if (typeof patch.adBlock === 'boolean') s.adBlock = patch.adBlock
+  if (typeof patch.checkUpdates === 'boolean') s.checkUpdates = patch.checkUpdates
   store.save()
   return s
 }

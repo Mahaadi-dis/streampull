@@ -7,8 +7,11 @@ import type {
   Settings,
   BrowserBounds,
   BrowserNav,
-  SniffItem
+  BrowserTabsState,
+  SniffItem,
+  UpdateInfo
 } from './types'
+import type { Bookmark, Visit } from './bookmarks'
 
 export interface Api {
   getBinaryState(): Promise<BinaryState>
@@ -41,6 +44,8 @@ export interface Api {
   showInFolder(id: string): Promise<void>
   openDownloadDir(): Promise<void>
   openExternal(url: string): Promise<void>
+  /** The newer release, if there is one (null when up to date, offline, or the check is turned off). */
+  checkForUpdate(): Promise<UpdateInfo | null>
 
   // Embedded browser
   browserSetBounds(b: BrowserBounds | null): Promise<void>
@@ -51,11 +56,27 @@ export interface Api {
   browserStop(): Promise<void>
   browserHome(): Promise<void>
   browserState(): Promise<BrowserNav>
+  browserTabs(): Promise<BrowserTabsState>
+  browserNewTab(input?: string): Promise<void>
+  browserSwitchTab(id: string): Promise<void>
+  browserCloseTab(id: string): Promise<void>
   listSniffed(): Promise<SniffItem[]>
   clearSniffed(): Promise<void>
   onBrowserNav(cb: (s: BrowserNav) => void): () => void
   onSniffed(cb: (item: SniffItem) => void): () => void
-  onSniffCleared(cb: () => void): () => void
+  /** The whole media list of the active tab (after a clear or a tab switch). */
+  onSniffList(cb: (items: SniffItem[]) => void): () => void
+  onBrowserTabs(cb: (s: BrowserTabsState) => void): () => void
+
+  // Bookmarks and browsing history
+  bookmarksList(): Promise<Bookmark[]>
+  bookmarkToggle(url: string, title: string): Promise<Bookmark[]>
+  bookmarkRemove(id: string): Promise<Bookmark[]>
+  visitsList(): Promise<Visit[]>
+  visitRemove(url: string): Promise<Visit[]>
+  visitsClear(): Promise<void>
+  /** Sign out of every site and wipe cookies, caches and stored site data of the built-in browser. */
+  browserClearSiteData(): Promise<void>
 }
 
 declare global {

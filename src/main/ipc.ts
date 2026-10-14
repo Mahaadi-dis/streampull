@@ -3,17 +3,31 @@ import { existsSync, mkdirSync } from 'fs'
 import type { DownloadRequest, Settings } from '@shared/types'
 import {
   back,
+  clearSiteData,
+  closeTab,
   forward,
   getNavState,
+  getTabsState,
   home,
   initBrowser,
   listSniffed,
   navigate,
+  newTab,
   reload,
   resetSniffed,
   setBounds,
-  stop
+  stop,
+  switchTab,
+  syncAdBlock
 } from './services/browser'
+import {
+  clearVisits,
+  listBookmarks,
+  listVisits,
+  removeBookmark,
+  removeVisit,
+  toggleBookmarkFor
+} from './services/browserData'
 import { getBinaryState, onBinaryState, updateYtdlp } from './services/binaries'
 import { clearHistory, getHistory, listHistory, removeHistory } from './services/history'
 import {
@@ -29,9 +43,10 @@ import {
   retry
 } from './services/queue'
 import { getSettings, updateSettings } from './services/settings'
+import { checkForUpdate } from './services/updates'
 import { applyWindowTheme } from './windowTheme'
 import { analyze } from './services/ytdlp'
-import { isValidUrl } from './services/ytdlpArgs'
+import { isValidUrl } from '@shared/ytdlpArgs'
 
 const str = (v: unknown): string => (typeof v === 'string' ? v : '')
 
@@ -75,6 +90,7 @@ export function registerIpc(getWin: () => BrowserWindow | null): void {
   ipcMain.handle('settings:get', () => getSettings())
   ipcMain.handle('settings:set', (_e, patch: Partial<Settings>) => {
     const s = updateSettings(patch ?? {})
+    if (typeof patch?.adBlock === 'boolean') syncAdBlock()
     if (patch?.theme) applyWindowTheme(getWin(), s.theme)
     repump()
     return s
@@ -127,6 +143,8 @@ export function registerIpc(getWin: () => BrowserWindow | null): void {
     if (isValidUrl(u)) return shell.openExternal(u)
   })
 
+  ipcMain.handle('update:check', () => (getSettings().checkUpdates ? checkForUpdate() : null))
+
   // Embedded browser
   ipcMain.handle('browser:bounds', (_e, b: unknown) => {
     const r = b as { x?: unknown; y?: unknown; width?: unknown; height?: unknown } | null
@@ -143,4 +161,19 @@ export function registerIpc(getWin: () => BrowserWindow | null): void {
   ipcMain.handle('browser:state', () => getNavState())
   ipcMain.handle('browser:sniffed', () => listSniffed())
   ipcMain.handle('browser:clearSniffed', () => resetSniffed())
+  ipcMain.handle('browser:tabs', () => getTabsState())
+  ipcMain.handle('browser:newTab', (_e, input: unknown) => newTab(str(input).slice(0, 2000)))
+  ipcMain.handle('browser:switchTab', (_e, id: unknown) => switchTab(str(id)))
+  ipcMain.handle('browser:closeTab', (_e, id: unknown) => closeTab(str(id)))
+
+  // Bookmarks and browsing history
+  ipcMain.handle('bookmarks:list', () => listBookmarks())
+  ipcMain.handle('bookmarks:toggle', (_e, url: unknown, title: unknown) =>
+    toggleBookmarkFor(str(url).slice(0, 2000), str(title).slice(0, 300))
+  )
+  ipcMain.handle('bookmarks:remove', (_e, id: unknown) => removeBookmark(str(id)))
+  ipcMain.handle('visits:list', () => listVisits())
+  ipcMain.handle('visits:remove', (_e, url: unknown) => removeVisit(str(url)))
+  ipcMain.handle('visits:clear', () => clearVisits())
+  ipcMain.handle('browser:clearSiteData', () => clearSiteData())
 }
