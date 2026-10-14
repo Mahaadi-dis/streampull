@@ -9,6 +9,8 @@ import { windowColors } from '@shared/themes'
 
 let win: BrowserWindow | null = null
 
+const APP_ID = 'com.streampull.app'
+
 // Window/taskbar icon. Packaged builds ship it in <resources>/ (see `extraResources`); in dev it
 // lives in the project's resources folder. Windows prefers the multi-size .ico for the taskbar.
 const iconFile = process.platform === 'win32' ? 'icon.ico' : 'icon.png'
@@ -29,7 +31,7 @@ if (!app.requestSingleInstanceLock()) {
   })
 
   app.whenReady().then(() => {
-    app.setAppUserModelId('com.streampull.app')
+    app.setAppUserModelId(APP_ID)
     initSettings()
     initHistory()
     registerIpc(() => win)
@@ -76,6 +78,19 @@ function createWindow(): void {
       sandbox: true
     }
   })
+
+  // Windows: pin the taskbar button's icon explicitly. With a custom AppUserModelId and no registered
+  // shortcut, Windows otherwise falls back to the executable's own icon (Electron's atom in dev).
+  if (process.platform === 'win32') {
+    const exe = `"${process.execPath}"`
+    win.setAppDetails({
+      appId: APP_ID,
+      appIconPath: iconPath(),
+      appIconIndex: 0,
+      relaunchCommand: app.isPackaged ? exe : `${exe} "${app.getAppPath()}"`,
+      relaunchDisplayName: 'StreamPull'
+    })
+  }
 
   win.once('ready-to-show', () => win?.show())
   win.on('closed', () => (win = null))
