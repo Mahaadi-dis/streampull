@@ -7,7 +7,7 @@
 **نزّل الفيديو والصوت من أي موقع تقريباً — بتطبيق مكتبي حديث مع ثيمات ألوان تقدر تبدّلها.**
 
 ![License: MIT](https://img.shields.io/badge/license-MIT-8b5cf6)
-![Platforms](https://img.shields.io/badge/Windows-available%20%C2%B7%20macOS%20%7C%20Linux-coming%20soon-7c3aed)
+![Platforms](https://img.shields.io/badge/Windows-available-7c3aed)
 
 العربية · [English](README.md)
 
