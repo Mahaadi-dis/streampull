@@ -1,4 +1,6 @@
 import { useState } from 'react'
+import { parseAccountUrl } from '@shared/accounts'
+import { parseYoutubeChannelUrl } from '@shared/channel'
 import { AnimatePresence, motion } from 'framer-motion'
 import { AlertTriangle, ClipboardPaste, FolderOpen, Link2, Loader2, Play, Search, Sparkles } from 'lucide-react'
 import { useT } from '@/i18n'
@@ -100,6 +102,9 @@ export default function Home(): React.JSX.Element {
                   <div className="absolute inset-0 -translate-x-full animate-shimmer bg-gradient-to-r from-transparent via-white/10 to-transparent" />
                 </div>
               ))}
+              {(parseYoutubeChannelUrl(analysis.url) || parseAccountUrl(analysis.url)) && (
+                <p className="pt-1 text-xs text-violet-300/60">{t('home.channelLoading')}</p>
+              )}
             </div>
           </motion.div>
         )}
@@ -124,7 +129,11 @@ export default function Home(): React.JSX.Element {
         )}
         {analysis.status === 'done' && (
           <div key="result" className="mb-6">
-            {analysis.info.isPlaylist ? <PlaylistPicker info={analysis.info} /> : <MediaCard info={analysis.info} />}
+            {analysis.info.isPlaylist ? (
+              <PlaylistPicker info={analysis.info} />
+            ) : (
+              <MediaCard info={analysis.info} />
+            )}
           </div>
         )}
       </AnimatePresence>

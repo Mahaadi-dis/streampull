@@ -1,4 +1,5 @@
 import { create } from 'zustand'
+import type { ChannelTab } from '@shared/channel'
 import type {
   BinaryState,
   DownloadItem,
@@ -35,12 +36,16 @@ interface AppState {
   toasts: Toast[]
   nav: BrowserNav
   sniffed: SniffItem[]
+  /** Channel tab currently being loaded (Videos / Shorts / Live). */
+  tabLoading: ChannelTab['id'] | null
 
   init: () => Promise<void>
   setPage: (p: Page) => void
   updateSettings: (patch: Partial<Settings>) => Promise<void>
   analyze: (url: string, cookieUrl?: string | null) => Promise<void>
   clearAnalysis: () => void
+  /** Switch the open channel to another tab. Returns an error code, or null on success. */
+  loadChannelTab: (tab: ChannelTab) => Promise<ErrorCode | null>
   enqueue: (reqs: DownloadRequest[]) => Promise<void>
   refreshHistory: () => Promise<void>
   toast: (text: string, tone?: Toast['tone']) => void
@@ -60,6 +65,7 @@ export const useApp = create<AppState>((set, get) => ({
   toasts: [],
   nav: { url: '', title: '', loading: false, canGoBack: false, canGoForward: false },
   sniffed: [],
+  tabLoading: null,
 
   init: async () => {
     if (initialized) return
@@ -119,7 +125,21 @@ export const useApp = create<AppState>((set, get) => ({
     else set({ analysis: { status: 'error', code: r.error, detail: r.detail } })
   },
 
-  clearAnalysis: () => set({ analysis: { status: 'idle' } }),
+  clearAnalysis: () => set({ analysis: { status: 'idle' }, tabLoading: null }),
+
+  loadChannelTab: async (tab) => {
+    const a = get().analysis
+    if (a.status !== 'done' || !a.info.channel || get().tabLoading) return null
+    set({ tabLoading: tab.id })
+    const r = await window.api.analyze(tab.url, a.info.cookieUrl)
+    // The user may have closed the card or analyzed something else meanwhile.
+    const still = get().analysis
+    if (still.status === 'done' && still.info.channel && still.info.title === a.info.title) {
+      if (r.ok) set({ analysis: { status: 'done', info: r.info } })
+    }
+    set({ tabLoading: null })
+    return r.ok ? null : r.error
+  },
 
   enqueue: async (reqs) => {
     const added = await window.api.addToQueue(reqs)

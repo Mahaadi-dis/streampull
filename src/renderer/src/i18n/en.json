@@ -132,5 +132,19 @@
   "theme.emerald": "Emerald",
   "theme.rose": "Rose",
   "theme.sunset": "Sunset",
-  "theme.midnight": "Midnight"
+  "theme.midnight": "Midnight",
+  "media.channel": "Channel",
+  "tab.videos": "Videos",
+  "tab.shorts": "Shorts",
+  "tab.streams": "Live streams",
+  "media.channelHint": "Pick a content type, then choose what to download.",
+  "media.live": "Live now",
+  "media.upcoming": "Upcoming",
+  "media.tabEmpty": "Nothing in this tab",
+  "media.tabLoading": "Loading list…",
+  "media.truncated": "Showing the first {n} items only",
+  "home.channelLoading": "Fetching the channel… big channels can take a minute.",
+  "media.account": "Account",
+  "media.accountHint": "Choose the posts you want to download.",
+  "err.login_required": "Instagram doesn't show this without signing in (an Instagram restriction). Direct links to public posts and reels usually work without it. A full account list needs a one-time sign-in from the Browser tab."
 }

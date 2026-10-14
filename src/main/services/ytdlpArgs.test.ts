@@ -53,6 +53,9 @@ describe('misc', () => {
     expect(classifyError('ERROR: Unsupported URL: x')).toBe('unsupported')
     expect(classifyError('ERROR: Private video. Sign in')).toBe('private')
     expect(classifyError('getaddrinfo failed')).toBe('network')
+    expect(classifyError('ERROR: [instagram:user] instagram: Unable to extract data; please report this issue')).toBe(
+      'login_required'
+    )
     expect(classifyError('boom')).toBe('unknown')
   })
   it('validates urls', () => {
@@ -90,5 +93,54 @@ describe('mapInfo', () => {
     })
     expect(i.isPlaylist).toBe(true)
     expect(i.entries).toHaveLength(1)
+  })
+})
+
+describe('channels', () => {
+  it('finds the tabs a channel has from the root listing', async () => {
+    const { channelTabsFromRoot } = await import('./ytdlpArgs')
+    const base = 'https://www.youtube.com/@x'
+    const tabs = channelTabsFromRoot(
+      {
+        entries: [
+          { _type: 'playlist', webpage_url: `${base}/videos` },
+          { _type: 'playlist', webpage_url: `${base}/streams` },
+          { _type: 'playlist', webpage_url: `${base}/shorts` },
+          { _type: 'playlist', webpage_url: `${base}/playlists` }
+        ]
+      },
+      base
+    )
+    expect(tabs.map((t) => t.id)).toEqual(['videos', 'shorts', 'streams']) // display order
+    expect(tabs[1].url).toBe(`${base}/shorts`)
+  })
+  it('treats a root that lists videos directly as a videos-only channel', async () => {
+    const { channelTabsFromRoot } = await import('./ytdlpArgs')
+    const base = 'https://www.youtube.com/@solo'
+    expect(channelTabsFromRoot({ entries: [{ _type: 'url', url: 'https://www.youtube.com/watch?v=a' }] }, base)).toEqual([
+      { id: 'videos', url: `${base}/videos` }
+    ])
+  })
+  it('picks a square avatar and shrinks it', async () => {
+    const { channelAvatar } = await import('./ytdlpArgs')
+    expect(
+      channelAvatar([
+        { id: 'banner_uncropped', url: 'https://x/banner=s0' },
+        { id: 'avatar_uncropped', url: 'https://yt3.googleusercontent.com/abc=s0' }
+      ])
+    ).toBe('https://yt3.googleusercontent.com/abc=s176-c')
+    expect(channelAvatar(undefined)).toBeNull()
+  })
+  it('flags live and upcoming entries', () => {
+    const i = mapInfo('https://x/p', {
+      _type: 'playlist',
+      title: 'C',
+      entries: [
+        { id: 'a', title: 'A', url: 'https://x/a', live_status: 'is_live' },
+        { id: 'b', title: 'B', url: 'https://x/b', live_status: 'is_upcoming' },
+        { id: 'c', title: 'C', url: 'https://x/c', live_status: 'was_live' }
+      ]
+    })
+    expect(i.entries.map((e) => e.liveStatus)).toEqual(['live', 'upcoming', null])
   })
 })

@@ -25,7 +25,12 @@ StreamPull is a desktop alternative to browser extensions like *Video DownloadHe
 - **Paste a link, pick a quality** — every available resolution with an estimated size, or audio only (MP3 / M4A).
 - **Built‑in browser that detects media** — play a video on any page and it shows up in the *Detected media* panel
   (direct files, HLS and DASH streams). Your logins are kept and reused for the download.
-- **Playlists & channels** — select, search and download many items at once.
+- **Playlists** — select, search and download many items at once.
+- **YouTube channels** — paste a channel link, choose **Videos**, **Shorts** or **Live streams**, then pick everything
+  or just the ones you want (live/upcoming streams are skipped automatically).
+- **TikTok & Instagram accounts** — paste a profile link and choose which posts to download. TikTok works out of the box.
+  Instagram only shows full profiles to signed‑in users, so an account list needs a one‑time sign‑in inside the built‑in
+  browser (the app then reuses that session). Direct links to public Instagram posts and reels work without signing in.
 - **Smart queue** — parallel downloads, pause / resume / cancel / retry, live speed and ETA.
 - **Library** — history with search, filters, *open file*, *show in folder*, *download again*.
 - **Color themes** — Violet, Ocean, Emerald, Rose, Sunset or Midnight black; change it any time in *Settings → Appearance*.

@@ -3,6 +3,7 @@ import { randomUUID } from 'crypto'
 import { mkdirSync, statSync } from 'fs'
 import type { DownloadItem, DownloadRequest } from '@shared/types'
 import { addHistory } from './history'
+import { usesBrowserLogin } from '@shared/accounts'
 import { removeCookieFile, writeCookieFile } from './browser'
 import { getSettings } from './settings'
 import { killTree, startDownload, type RunningDownload } from './ytdlp'
@@ -67,7 +68,8 @@ async function run(item: DownloadItem): Promise<void> {
   }
 
   let file: string | undefined
-  const cookieFile = item.cookieUrl ? await writeCookieFile([item.cookieUrl, item.url]).catch(() => null) : null
+  const cookieSrc = item.cookieUrl ?? (usesBrowserLogin(item.url) ? item.url : null)
+  const cookieFile = cookieSrc ? await writeCookieFile([cookieSrc, item.url]).catch(() => null) : null
   touch(item, { status: 'downloading', error: undefined, errorDetail: undefined, speed: null, eta: null })
 
   // A video+audio download runs as two streams whose byte counters restart at 0.

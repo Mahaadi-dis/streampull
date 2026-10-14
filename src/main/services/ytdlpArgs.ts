@@ -9,6 +9,7 @@ import type {
 } from '@shared/types'
 import { DEFAULT_QUALITIES } from '@shared/types'
 import { sanitizeFileName } from './sniffRules'
+import { CHANNEL_TABS, channelTabUrl, type ChannelTab } from '@shared/channel'
 
 export const isAudioQuality = (q: QualityKey): boolean => q === 'mp3' || q === 'm4a'
 
@@ -90,6 +91,9 @@ export function classifyError(text: string): ErrorCode {
   const t = text.toLowerCase()
   if (t.includes('unsupported url')) return 'unsupported'
   if (t.includes('drm')) return 'drm'
+  // Social sites that need a signed-in session (cookies from the embedded browser fix this).
+  if (/(instagram|facebook|tiktok)/.test(t) && /(unable to extract|login|log in|--cookies|empty media|not available)/.test(t))
+    return 'login_required'
   if (
     /private video|sign in|log ?in|members-only|members only|confirm your age|age-restricted|not available in your country|video unavailable|this video is not available/.test(
       t
@@ -165,6 +169,7 @@ interface RawEntry {
   duration?: number | null
   thumbnail?: string | null
   thumbnails?: { url?: string }[]
+  live_status?: string | null
 }
 
 const isHttp = (s: unknown): s is string => typeof s === 'string' && /^https?:\/\//i.test(s)
@@ -198,7 +203,8 @@ export function mapInfo(url: string, raw: Record<string, unknown>): MediaInfo {
         title: e.title || e.id || `#${i + 1}`,
         url: u,
         duration: e.duration ?? null,
-        thumbnail: thumb(e)
+        thumbnail: thumb(e),
+        liveStatus: e.live_status === 'is_live' ? 'live' : e.live_status === 'is_upcoming' ? 'upcoming' : null
       })
     })
     return {
@@ -236,3 +242,36 @@ export function isValidUrl(s: string): boolean {
 
 /** For video URLs that also carry a ?list= param, treat as a single video. */
 export const wantsSingle = (url: string): boolean => /[?&]v=/.test(url) && /[?&]list=/.test(url)
+
+// ---------------------------------------------------------------------------
+// YouTube channels
+
+/** How many tab entries to ask for when probing a channel root (each tab is limited to this many items too). */
+export const CHANNEL_ROOT_PROBE = 8
+/** Upper bound for one tab listing, so a huge channel can't stall or exhaust memory. */
+export const CHANNEL_LIST_CAP = 3000
+
+/**
+ * Which of Videos / Shorts / Live-streams a channel has, from yt-dlp's root listing.
+ * Multi-tab channels return the tabs as nested playlists; single-tab channels return videos directly.
+ */
+export function channelTabsFromRoot(raw: Record<string, unknown>, base: string): ChannelTab[] {
+  const entries = Array.isArray(raw.entries) ? (raw.entries as Record<string, unknown>[]) : []
+  const found = new Set<string>()
+  for (const e of entries) {
+    if (!e || e._type !== 'playlist') continue
+    const u = String(e.webpage_url ?? e.url ?? '')
+    const m = /\/(videos|shorts|streams)\/?$/.exec(u)
+    if (m) found.add(m[1])
+  }
+  if (found.size === 0) found.add('videos') // single-tab channel
+  return CHANNEL_TABS.filter((id) => found.has(id)).map((id) => ({ id, url: channelTabUrl(base, id) }))
+}
+
+/** Square avatar URL from a channel's thumbnail list (the original is huge: `=s0`). */
+export function channelAvatar(thumbnails: unknown): string | null {
+  if (!Array.isArray(thumbnails)) return null
+  const av = (thumbnails as { id?: string; url?: string }[]).find((t) => /avatar/i.test(t.id ?? '') && t.url)
+  if (!av?.url) return null
+  return av.url.replace(/=s\d+[^/]*$/, '=s176-c')
+}

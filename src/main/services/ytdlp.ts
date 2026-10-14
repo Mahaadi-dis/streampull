@@ -1,9 +1,15 @@
 import { spawn, type ChildProcess } from 'child_process'
-import type { AnalyzeResult, DownloadItem, Settings } from '@shared/types'
+import type { AnalyzeResult, DownloadItem, ErrorCode, Settings } from '@shared/types'
+import { parseAccountUrl, usesBrowserLogin, type ParsedAccountUrl } from '@shared/accounts'
+import { parseYoutubeChannelUrl, type ParsedChannelUrl } from '@shared/channel'
 import { ffmpegPath, getBinaryState, ytdlpPath } from './binaries'
 import { browserUserAgent, removeCookieFile, writeCookieFile } from './browser'
 import {
+  CHANNEL_LIST_CAP,
+  CHANNEL_ROOT_PROBE,
   POST_TEMPLATE,
+  channelAvatar,
+  channelTabsFromRoot,
   PROGRESS_TEMPLATE,
   classifyError,
   formatArgs,
@@ -51,17 +57,105 @@ export async function analyze(url: string, cookieUrl?: string | null): Promise<A
   if (!isValidUrl(url)) return { ok: false, error: 'invalid_url' }
   if (getBinaryState().phase !== 'ready') return { ok: false, error: 'not_ready' }
 
-  const cookieFile = cookieUrl ? await writeCookieFile([cookieUrl, url]) : null
+  // Explicit (from the embedded browser), or automatic for social sites the user may have signed in to.
+  const cookieSrc = cookieUrl ?? (usesBrowserLogin(url) ? url : null)
+  const cookieFile = cookieSrc ? await writeCookieFile([cookieSrc, url]) : null
   try {
-    const r = await runAnalyze(url, cookieFile)
-    return r.ok && cookieUrl ? { ok: true, info: { ...r.info, cookieUrl } } : r
+    const channel = parseYoutubeChannelUrl(url)
+    const account = channel ? null : parseAccountUrl(url)
+    const r = channel
+      ? await analyzeChannel(channel, url, cookieFile)
+      : account
+        ? await analyzeAccount(account, url, cookieFile)
+        : await analyzeUrl(url, cookieFile)
+    // Downloads of what was listed must use the same session.
+    const effective = cookieUrl ?? (cookieFile ? url : null)
+    return r.ok && effective ? { ok: true, info: { ...r.info, cookieUrl: effective } } : r
   } finally {
     await removeCookieFile(cookieFile)
   }
 }
 
-function runAnalyze(url: string, cookieFile: string | null): Promise<AnalyzeResult> {
+type RawResult = { ok: true; raw: Record<string, unknown> } | { ok: false; error: ErrorCode; detail?: string }
+
+async function analyzeUrl(url: string, cookieFile: string | null): Promise<AnalyzeResult> {
+  const r = await runJson(url, cookieFile, { timeoutMs: 90_000 })
+  return r.ok ? { ok: true, info: mapInfo(url, r.raw) } : r
+}
+
+const ACCOUNT_LIST_CAP = 300
+
+/** A TikTok / Instagram profile: list its posts. */
+async function analyzeAccount(
+  acc: ParsedAccountUrl,
+  originalUrl: string,
+  cookieFile: string | null
+): Promise<AnalyzeResult> {
+  const list = await runJson(acc.base, cookieFile, { timeoutMs: 300_000, playlistEnd: ACCOUNT_LIST_CAP })
+  if (!list.ok) return list
+  const info = mapInfo(acc.base, list.raw)
+  if (!info.isPlaylist) return analyzeUrl(originalUrl, cookieFile)
+  const name = `@${acc.handle}`
+  return {
+    ok: true,
+    info: {
+      ...info,
+      title: name,
+      uploader: name,
+      site: acc.platform === 'tiktok' ? 'TikTok' : 'Instagram',
+      isPlaylist: true,
+      channel: {
+        kind: 'account',
+        tabs: [{ id: 'videos', url: acc.base }],
+        activeTab: 'videos',
+        truncated: info.entries.length >= ACCOUNT_LIST_CAP
+      }
+    }
+  }
+}
+
+const str = (v: unknown): string | null => (typeof v === 'string' && v.trim() ? v.trim() : null)
+
+/** A YouTube channel: find its tabs, then list the requested one (Videos by default). */
+async function analyzeChannel(
+  ch: ParsedChannelUrl,
+  originalUrl: string,
+  cookieFile: string | null
+): Promise<AnalyzeResult> {
+  const root = await runJson(ch.base, cookieFile, { timeoutMs: 60_000, playlistEnd: CHANNEL_ROOT_PROBE })
+  if (!root.ok) return root
+
+  const tabs = channelTabsFromRoot(root.raw, ch.base)
+  const wanted = ch.tab && tabs.some((t) => t.id === ch.tab) ? ch.tab : null
+  const active = tabs.find((t) => t.id === (wanted ?? 'videos')) ?? tabs[0]
+  if (!active) return analyzeUrl(originalUrl, cookieFile)
+
+  const list = await runJson(active.url, cookieFile, { timeoutMs: 300_000, playlistEnd: CHANNEL_LIST_CAP })
+  if (!list.ok) return list
+
+  const info = mapInfo(active.url, list.raw)
+  const name = str(root.raw.uploader) ?? str(root.raw.channel) ?? info.title
+  return {
+    ok: true,
+    info: {
+      ...info,
+      title: name,
+      uploader: name,
+      thumbnail: channelAvatar(root.raw.thumbnails) ?? info.thumbnail,
+      site: 'Youtube',
+      isPlaylist: true,
+      channel: { tabs, activeTab: active.id, truncated: info.entries.length >= CHANNEL_LIST_CAP }
+    }
+  }
+}
+
+function runJson(
+  url: string,
+  cookieFile: string | null,
+  opts: { timeoutMs: number; playlistEnd?: number }
+): Promise<RawResult> {
   const args = [...BASE, '-J', '--flat-playlist', '--socket-timeout', '20']
+  if (opts.playlistEnd) args.push('--playlist-end', String(opts.playlistEnd))
   if (cookieFile) args.push('--cookies', cookieFile)
   if (wantsSingle(url)) args.push('--no-playlist')
   args.push('--', url)
@@ -70,7 +164,7 @@ function runAnalyze(url: string, cookieFile: string | null): Promise<AnalyzeResu
     const p = spawn(ytdlpPath(), args, spawnOpts)
     const out: Buffer[] = []
     let err = ''
-    const timer = setTimeout(() => killTree(p), 90_000)
+    const timer = setTimeout(() => killTree(p), opts.timeoutMs)
     p.stdout.on('data', (d: Buffer) => out.push(d))
     p.stderr.on('data', (d: Buffer) => (err += d.toString('utf8')))
     p.on('error', (e) => resolve({ ok: false, error: 'unknown', detail: e.message }))
@@ -81,8 +175,7 @@ function runAnalyze(url: string, cookieFile: string | null): Promise<AnalyzeResu
         return
       }
       try {
-        const raw = JSON.parse(Buffer.concat(out).toString('utf8')) as Record<string, unknown>
-        resolve({ ok: true, info: mapInfo(url, raw) })
+        resolve({ ok: true, raw: JSON.parse(Buffer.concat(out).toString('utf8')) as Record<string, unknown> })
       } catch (e) {
         resolve({ ok: false, error: 'unknown', detail: e instanceof Error ? e.message : String(e) })
       }

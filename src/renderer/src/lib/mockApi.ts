@@ -59,6 +59,54 @@ const history: HistoryItem[] = Array.from({ length: 7 }, (_, i) => ({
   fileExists: i !== 4
 }))
 
+const channelInfo = (url: string): MediaInfo => {
+  const tab = (/\/(shorts|streams)\/?$/.exec(url)?.[1] ?? 'videos') as 'videos' | 'shorts' | 'streams'
+  const count = tab === 'videos' ? 24 : tab === 'shorts' ? 18 : 9
+  const label = { videos: 'فيديو', shorts: 'شورت', streams: 'بث' }[tab]
+  return {
+    url,
+    title: 'قناة تجريبية — Demo Channel',
+    thumbnail: thumb(60),
+    uploader: 'Demo Channel',
+    site: 'Youtube',
+    isPlaylist: true,
+    options: DEFAULT_QUALITIES,
+    channel: {
+      activeTab: tab,
+      tabs: (['videos', 'shorts', 'streams'] as const).map((id) => ({ id, url: `https://www.youtube.com/@demo/${id}` }))
+    },
+    entries: Array.from({ length: count }, (_, i) => ({
+      id: String(i),
+      index: i + 1,
+      title: `${label} رقم ${i + 1} — ${tab} #${i + 1}`,
+      url: `https://www.youtube.com/watch?v=${tab}${i}`,
+      duration: tab === 'shorts' ? 30 + i : 400 + i * 37,
+      thumbnail: thumb(70 + i + (tab === 'shorts' ? 30 : 0)),
+      liveStatus: tab === 'streams' && i === 0 ? ('live' as const) : tab === 'streams' && i === 1 ? ('upcoming' as const) : null
+    }))
+  }
+}
+
+const accountInfo = (url: string): MediaInfo => ({
+  url,
+  title: '@demo_account',
+  thumbnail: thumb(90),
+  uploader: '@demo_account',
+  site: 'TikTok',
+  isPlaylist: true,
+  options: DEFAULT_QUALITIES,
+  channel: { kind: 'account', activeTab: 'videos', tabs: [{ id: 'videos', url }] },
+  entries: Array.from({ length: 16 }, (_, i) => ({
+    id: String(i),
+    index: i + 1,
+    title: `مقطع تيك توك رقم ${i + 1} #ترند`,
+    url: `https://www.tiktok.com/@demo_account/video/${1000 + i}`,
+    duration: 15 + i * 3,
+    thumbnail: thumb(120 + i),
+    liveStatus: null
+  }))
+})
+
 const info = (url: string): MediaInfo =>
   /list|playlist/.test(url)
     ? {
@@ -111,6 +159,9 @@ export const mockApi: Api = {
   readClipboard: async () => 'https://www.youtube.com/watch?v=demo',
   analyze: async (url) => {
     await new Promise((r) => setTimeout(r, 900))
+    if (url.includes('youtube.com/@')) return { ok: true, info: channelInfo(url) }
+    if (url.includes('tiktok.com/@')) return { ok: true, info: accountInfo(url) }
+    if (url.includes('instagram.com/locked')) return { ok: false, error: 'login_required' }
     return url.includes('bad') ? { ok: false, error: 'unsupported' } : { ok: true, info: info(url) }
   },
   listQueue: async () => queue,

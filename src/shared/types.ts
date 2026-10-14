@@ -1,3 +1,4 @@
+import type { ChannelTab, ChannelTabId } from './channel'
 import type { ThemeId } from './themes'
 
 export type Lang = 'ar' | 'en'
@@ -32,6 +33,18 @@ export interface PlaylistEntry {
   url: string
   duration?: number | null
   thumbnail?: string | null
+  /** Set for streams that are on air or scheduled — they can't be downloaded as files yet. */
+  liveStatus?: 'live' | 'upcoming' | null
+}
+
+/** Present when the analyzed URL is a YouTube channel: its tabs and the one currently listed. */
+export interface ChannelInfo {
+  tabs: ChannelTab[]
+  activeTab: ChannelTabId
+  /** The listing was cut at the cap (very large channels). */
+  truncated?: boolean
+  /** A social-media profile (TikTok / Instagram) rather than a YouTube channel. */
+  kind?: 'channel' | 'account'
 }
 
 export interface MediaInfo {
@@ -46,6 +59,7 @@ export interface MediaInfo {
   options: QualityOption[]
   /** Set when analyzed from the embedded browser, so downloads reuse its cookies. */
   cookieUrl?: string | null
+  channel?: ChannelInfo
 }
 
 export interface DownloadRequest {
@@ -117,6 +131,7 @@ export type ErrorCode =
   | 'invalid_url'
   | 'unsupported'
   | 'private'
+  | 'login_required'
   | 'drm'
   | 'network'
   | 'not_ready'
