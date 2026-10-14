@@ -1,7 +1,7 @@
 {
   "name": "streampull",
   "productName": "StreamPull",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Download videos and audio from almost any site. Modern desktop app built on yt-dlp and FFmpeg.",
   "main": "./out/main/index.js",
   "author": {
