@@ -204,7 +204,14 @@ export const mockApi: Api = {
   onBrowserNav: sub,
   onSniffed: sub,
   onSniffList: sub,
-  browserTabs: async () => ({ tabs: [], activeId: '' }),
+  browserTabs: async () => ({
+    tabs: [
+      { id: 't1', title: 'YouTube', url: 'https://www.youtube.com/', loading: false, media: 2, blocked: 14 },
+      { id: 't2', title: 'Vimeo — فيديوهات', url: 'https://vimeo.com/watch', loading: false, media: 0, blocked: 3 },
+      { id: 't3', title: '', url: '', loading: false, media: 0, blocked: 0 }
+    ],
+    activeId: 't3'
+  }),
   browserNewTab: noop,
   browserSwitchTab: noop,
   browserCloseTab: noop,
