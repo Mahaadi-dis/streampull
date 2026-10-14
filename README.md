@@ -7,7 +7,7 @@
 **Download videos and audio from almost any site — in a modern desktop app with switchable color themes.**
 
 ![License: MIT](https://img.shields.io/badge/license-MIT-8b5cf6)
-![Platforms](https://img.shields.io/badge/Windows-available%20%C2%B7%20macOS%20%7C%20Linux%20%7C%20Android-coming%20soon-7c3aed)
+![Platforms](https://img.shields.io/badge/Windows-available7c3aed)
 ![Built with](https://img.shields.io/badge/built%20with-Electron%20%2B%20yt--dlp%20%2B%20FFmpeg-c084fc)
 
 [العربية](README.ar.md) · English
