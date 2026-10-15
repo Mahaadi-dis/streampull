@@ -47,7 +47,20 @@ async function pageTarget() {
   throw new Error('the app window never appeared')
 }
 
-const target = await pageTarget()
+let target
+try {
+  target = await pageTarget()
+} catch (e) {
+  let seen = ''
+  try {
+    seen = JSON.stringify(await (await fetch(`http://127.0.0.1:${PORT}/json`)).json()).slice(0, 800)
+  } catch (err) {
+    seen = 'DevTools endpoint not reachable: ' + (err instanceof Error ? err.message : err)
+  }
+  log('ERROR', e instanceof Error ? e.message : e, seen)
+  annotate('error', 'smoke: app window never appeared', lines.join('\n'))
+  process.exit(1)
+}
 const ws = new WebSocket(target.webSocketDebuggerUrl)
 await new Promise((r) => (ws.onopen = r))
 let nextId = 0

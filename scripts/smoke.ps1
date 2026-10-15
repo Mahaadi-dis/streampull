@@ -30,7 +30,9 @@ Write-Host "Data folder: $data"
 $oldTemp = $env:TEMP; $oldTmp = $env:TMP
 $env:TEMP = $tmp; $env:TMP = $tmp
 $argList = @($AppArgs) + @("`"--user-data-dir=$data`"", "--remote-debugging-port=$Port", '--lang=ar-SA')
-$proc = Start-Process -FilePath $Exe -ArgumentList $argList -PassThru
+$appOut = Join-Path $root 'app-stdout.txt'
+$appErr = Join-Path $root 'app-stderr.txt'
+$proc = Start-Process -FilePath $Exe -ArgumentList $argList -PassThru -RedirectStandardOutput $appOut -RedirectStandardError $appErr
 $env:TEMP = $oldTemp; $env:TMP = $oldTmp
 
 $code = 1
@@ -41,6 +43,13 @@ try {
   $code = $LASTEXITCODE
 }
 finally {
+  # What the app itself printed (crashes, GPU errors …) is the best clue when something fails.
+  if ($code -ne 0) {
+    $tail = ''
+    foreach ($f in @($appOut, $appErr)) { if (Test-Path $f) { $tail += "--- $(Split-Path $f -Leaf) ---`n" + ((Get-Content $f -Tail 25 -ErrorAction SilentlyContinue) -join "`n") + "`n" } }
+    Write-Host $tail
+    if ($env:GITHUB_ACTIONS) { Write-Host ("::error title=smoke app output::" + ($tail -replace '%', '%25' -replace "`r", '' -replace "`n", '%0A')) }
+  }
   if ($proc.HasExited) {
     $msg = "The app exited by itself with code $($proc.ExitCode)."
     Write-Host $msg
