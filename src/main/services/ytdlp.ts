@@ -1,7 +1,9 @@
 import { spawn, type ChildProcess } from 'child_process'
+import { session } from 'electron'
 import type { AnalyzeResult, DownloadItem, Settings } from '@shared/types'
 import { analyzeWith, type RawResult, type RunOptions } from '@shared/analyze'
 import { usesBrowserLogin } from '@shared/accounts'
+import { proxyFromRule } from '@shared/proxy'
 import { ffmpegPath, getBinaryState, ytdlpPath } from './binaries'
 import { browserUserAgent, removeCookieFile, writeCookieFile } from './browser'
 import {
@@ -19,6 +21,24 @@ import {
 } from '@shared/ytdlpArgs'
 
 const BASE = ['--no-colors', '--no-warnings', '--ignore-config', '--encoding', 'utf-8']
+
+/**
+ * yt-dlp is a separate program and ignores Windows' proxy settings, so on networks that need a proxy (many VPN
+ * apps, offices, schools) it cannot reach any site although the browser can. The app asks Chromium which proxy
+ * the system wants and hands it to yt-dlp. Refreshed periodically because VPNs switch on and off.
+ */
+let proxyArgs: string[] = []
+
+export const currentProxyArgs = (): string[] => proxyArgs
+
+export async function refreshProxy(): Promise<void> {
+  try {
+    const p = proxyFromRule(await session.defaultSession.resolveProxy('https://www.youtube.com'))
+    proxyArgs = p ? ['--proxy', p] : []
+  } catch {
+    proxyArgs = []
+  }
+}
 
 const isWin = process.platform === 'win32'
 
@@ -66,7 +86,7 @@ export async function analyze(url: string, cookieUrl?: string | null): Promise<A
 }
 
 function runJson(url: string, cookieFile: string | null, opts: RunOptions): Promise<RawResult> {
-  const args = [...BASE, '-J', '--flat-playlist', '--socket-timeout', '20']
+  const args = [...BASE, ...proxyArgs, '-J', '--flat-playlist', '--socket-timeout', '20']
   if (opts.playlistEnd) args.push('--playlist-end', String(opts.playlistEnd))
   if (cookieFile) args.push('--cookies', cookieFile)
   if (wantsSingle(url)) args.push('--no-playlist')
@@ -114,6 +134,7 @@ export function startDownload(
 ): RunningDownload {
   const args = [
     ...BASE,
+    ...proxyArgs,
     '--newline',
     '--progress',
     '--no-playlist',

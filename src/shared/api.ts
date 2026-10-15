@@ -46,6 +46,8 @@ export interface Api {
   openExternal(url: string): Promise<void>
   /** The newer release, if there is one (null when up to date, offline, or the check is turned off). */
   checkForUpdate(): Promise<UpdateInfo | null>
+  /** A plain-text report (versions, helper programs, network reachability, a test analysis) for troubleshooting. */
+  runDiagnostics(): Promise<string>
 
   // Embedded browser
   browserSetBounds(b: BrowserBounds | null): Promise<void>

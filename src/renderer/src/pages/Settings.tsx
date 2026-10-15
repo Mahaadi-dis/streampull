@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Check, FolderOpen, Info, Loader2, RefreshCw, Trash2 } from 'lucide-react'
+import { Check, ClipboardCopy, FolderOpen, Info, Loader2, RefreshCw, Stethoscope, Trash2 } from 'lucide-react'
 import { THEMES } from '@shared/themes'
 import type { Lang, NameTemplate } from '@shared/types'
 import { useT } from '@/i18n'
@@ -57,6 +57,8 @@ export default function Settings(): React.JSX.Element | null {
   const t = useT()
   const { settings, updateSettings, binary, toast } = useApp()
   const [updating, setUpdating] = useState(false)
+  const [diag, setDiag] = useState('')
+  const [diagBusy, setDiagBusy] = useState(false)
   if (!settings) return null
 
   const pickFolder = async (): Promise<void> => {
@@ -70,6 +72,15 @@ export default function Settings(): React.JSX.Element | null {
       await window.api.updateYtdlp()
     } finally {
       setUpdating(false)
+    }
+  }
+
+  const runDiag = async (): Promise<void> => {
+    setDiagBusy(true)
+    try {
+      setDiag(await window.api.runDiagnostics())
+    } finally {
+      setDiagBusy(false)
     }
   }
 
@@ -297,6 +308,31 @@ export default function Settings(): React.JSX.Element | null {
             </button>
           </div>
         </Row>
+        <Row label={t('set.diag')} hint={t('set.diagHint')}>
+          <button className="btn-ghost" onClick={runDiag} disabled={diagBusy}>
+            {diagBusy ? <Loader2 size={16} className="animate-spin" /> : <Stethoscope size={16} />}
+            {diagBusy ? t('set.diagRunning') : t('set.diagRun')}
+          </button>
+        </Row>
+        {diag && (
+          <div className="pb-4">
+            <textarea
+              readOnly
+              dir="ltr"
+              value={diag}
+              className="h-56 w-full resize-y rounded-xl border border-line bg-black/30 p-3 font-mono text-[11px] leading-relaxed text-violet-100/80 outline-none"
+            />
+            <button
+              className="btn-ghost mt-2"
+              onClick={() => {
+                void navigator.clipboard.writeText(diag)
+                toast(t('set.diagCopied'), 'ok')
+              }}
+            >
+              <ClipboardCopy size={16} /> {t('set.diagCopy')}
+            </button>
+          </div>
+        )}
       </Section>
 
       <div className="flex gap-3 rounded-2xl border border-line bg-white/[0.03] p-4 text-xs leading-relaxed text-violet-200/55">

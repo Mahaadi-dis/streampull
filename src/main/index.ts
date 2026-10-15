@@ -2,6 +2,7 @@ import { app, BrowserWindow, shell } from 'electron'
 import { join } from 'path'
 import { registerIpc } from './ipc'
 import { ensureBinaries } from './services/binaries'
+import { refreshProxy } from './services/ytdlp'
 import { flushBrowserData, initBrowserData } from './services/browserData'
 import { flushHistory, initHistory } from './services/history'
 import { killAll } from './services/queue'
@@ -38,6 +39,8 @@ if (!app.requestSingleInstanceLock()) {
     initBrowserData()
     registerIpc(() => win)
     createWindow()
+    void refreshProxy()
+    setInterval(() => void refreshProxy(), 60_000).unref()
     void ensureBinaries()
     app.on('activate', () => {
       if (BrowserWindow.getAllWindows().length === 0) createWindow()
@@ -94,6 +97,15 @@ function createWindow(): void {
       relaunchDisplayName: 'StreamPull'
     })
   }
+
+  // The UI is laid out for 100% page zoom and the built-in browser view is positioned from it, so lock the
+  // zoom (Ctrl +/-/wheel/pinch) and undo any zoom a previous run left behind.
+  win.webContents.setVisualZoomLevelLimits(1, 1)
+  win.webContents.on('zoom-changed', () => win?.webContents.setZoomLevel(0))
+  win.webContents.on('did-finish-load', () => win?.webContents.setZoomLevel(0))
+  win.webContents.on('before-input-event', (e, input) => {
+    if ((input.control || input.meta) && ['+', '=', '-', '_', '0'].includes(input.key)) e.preventDefault()
+  })
 
   win.once('ready-to-show', () => win?.show())
   win.on('closed', () => (win = null))

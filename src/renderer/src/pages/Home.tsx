@@ -119,7 +119,7 @@ export default function Home(): React.JSX.Element {
             <AlertTriangle size={20} className="mt-0.5 shrink-0 text-bad" />
             <div>
               <div className="font-semibold text-red-100">{t(`err.${analysis.code}`)}</div>
-              {analysis.detail && analysis.code === 'unknown' && (
+              {analysis.detail && (analysis.code === 'unknown' || analysis.code === 'network') && (
                 <div className="mt-1 break-all text-xs text-red-200/60" dir="ltr">
                   {analysis.detail}
                 </div>

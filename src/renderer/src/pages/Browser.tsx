@@ -70,18 +70,21 @@ export default function BrowserPage(): React.JSX.Element {
       void api.browserSetBounds(null)
       return
     }
-    const push = (): void => {
+    // The native view is not part of the page, so a layout shift (sidebar, scrollbar, fonts loading, window
+    // resize, display scaling) would leave it misplaced. Check the rectangle every frame and only send changes.
+    let last = ''
+    let frame = 0
+    const tick = (): void => {
       const r = el.getBoundingClientRect()
-      void api.browserSetBounds({ x: r.x, y: r.y, width: r.width, height: r.height })
+      const key = `${r.x}|${r.y}|${r.width}|${r.height}`
+      if (key !== last) {
+        last = key
+        void api.browserSetBounds({ x: r.x, y: r.y, width: r.width, height: r.height })
+      }
+      frame = requestAnimationFrame(tick)
     }
-    push()
-    const ro = new ResizeObserver(push)
-    ro.observe(el)
-    window.addEventListener('resize', push)
-    return () => {
-      ro.disconnect()
-      window.removeEventListener('resize', push)
-    }
+    tick()
+    return () => cancelAnimationFrame(frame)
   }, [start, overlay, panel, api])
 
   // Hide the view when the page unmounts (also done in the store for instant hiding).

@@ -352,11 +352,18 @@ export function setBounds(b: BrowserBounds | null): void {
   }
   const t = ensureTab()
   if (!t) return
+  // The renderer measures in CSS pixels; native bounds are in window (DIP) units, which differ when the
+  // window's page zoom is not 100%. Keep the view inside the window so it can never spill over the sidebar.
+  const win = getWin()
+  const z = win && !win.isDestroyed() ? win.webContents.getZoomFactor() : 1
+  const content = win && !win.isDestroyed() ? win.getContentBounds() : null
+  const x = Math.max(0, Math.round(b.x * z))
+  const y = Math.max(0, Math.round(b.y * z))
   lastBounds = {
-    x: Math.round(b.x),
-    y: Math.round(b.y),
-    width: Math.max(0, Math.round(b.width)),
-    height: Math.max(0, Math.round(b.height))
+    x,
+    y,
+    width: Math.max(0, Math.min(Math.round(b.width * z), content ? content.width - x : Infinity)),
+    height: Math.max(0, Math.min(Math.round(b.height * z), content ? content.height - y : Infinity))
   }
   pageVisible = true
   applyVisibility()

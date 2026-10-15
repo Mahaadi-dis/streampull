@@ -1,4 +1,4 @@
-import { app } from 'electron'
+import { app, net } from 'electron'
 import { spawn } from 'child_process'
 import { chmodSync, createWriteStream, existsSync, mkdirSync, renameSync, rmSync } from 'fs'
 import { join } from 'path'
@@ -13,6 +13,8 @@ import { JsonStore } from './jsonStore'
 const DAY = 24 * 60 * 60 * 1000
 
 let state: BinaryState = { phase: 'checking' }
+/** Automatic retries after a failed set-up (flaky Wi-Fi, a VPN that is still connecting …). */
+let retries = 0
 let listener: ((s: BinaryState) => void) | null = null
 let meta: JsonStore<{ lastUpdateCheck: number }>
 
@@ -33,18 +35,32 @@ function setState(s: BinaryState): void {
   listener?.(s)
 }
 
-function run(
-  file: string,
-  args: string[],
-  timeoutMs = 120_000
-): Promise<{ code: number; out: string }> {
+/** What actually went wrong with a failed fetch (Node hides the reason in `cause`: ENOTFOUND, ETIMEDOUT, certificate errors …). */
+export function describeError(e: unknown): string {
+  if (!(e instanceof Error)) return String(e)
+  const cause = (e as { cause?: { code?: string; message?: string } }).cause
+  const extra = cause?.code ?? cause?.message
+  return extra ? `${e.message} (${extra})` : e.message
+}
+
+interface RunResult {
+  code: number
+  out: string
+  /** The process could not be started at all (blocked, missing, no permission …). */
+  error?: string
+}
+
+function run(file: string, args: string[], timeoutMs = 120_000): Promise<RunResult> {
   return new Promise((resolve) => {
     const p = spawn(file, args, { windowsHide: true })
     let out = ''
     const t = setTimeout(() => p.kill(), timeoutMs)
     p.stdout.on('data', (d) => (out += d))
     p.stderr.on('data', (d) => (out += d))
-    p.on('error', () => resolve({ code: -1, out }))
+    p.on('error', (e) => {
+      clearTimeout(t)
+      resolve({ code: -1, out, error: e.message })
+    })
     p.on('close', (code) => {
       clearTimeout(t)
       resolve({ code: code ?? -1, out })
@@ -57,8 +73,15 @@ async function download(asset: Asset, item: 'yt-dlp' | 'ffmpeg'): Promise<void> 
   const dest = join(binDir(), asset.file)
   const tmp = dest + '.download'
 
-  const res = await fetch(asset.url, { redirect: 'follow' })
-  if (!res.ok || !res.body) throw new Error(`${item}: HTTP ${res.status}`)
+  // Chromium's network stack (not Node's fetch): it follows the system proxy and trusts the Windows certificate
+  // store, so it works on networks where a browser works (corporate/ISP proxies, antivirus HTTPS scanning).
+  let res: Response
+  try {
+    res = await net.fetch(asset.url, { redirect: 'follow' })
+  } catch (e) {
+    throw new Error(`${item}: could not download — ${describeError(e)}`)
+  }
+  if (!res.ok || !res.body) throw new Error(`${item}: download failed (HTTP ${res.status})`)
   const total = Number(res.headers.get('content-length')) || 0
   let got = 0
   setState({ phase: 'downloading', percent: 0, item })
@@ -78,13 +101,39 @@ async function download(asset: Asset, item: 'yt-dlp' | 'ffmpeg'): Promise<void> 
   renameSync(tmp, dest)
 }
 
-async function readYtdlpVersion(): Promise<string | null> {
-  const r = await run(ytdlpPath(), ['--version'], 20_000)
-  return r.code === 0 ? r.out.trim().split(/\r?\n/).pop() || null : null
+/** Windows exit code for "a DLL the program needs is missing" — typically the Visual C++ runtime. */
+const STATUS_DLL_NOT_FOUND = 3221225781
+
+/** Why a helper program failed to run, in words a person can act on. */
+export function explainRun(name: string, r: RunResult): string {
+  const why = r.error
+    ? r.error
+    : r.code === STATUS_DLL_NOT_FOUND
+      ? 'a required Windows component is missing — install the Microsoft Visual C++ Redistributable (x64)'
+      : `exit code ${r.code}`
+  const tail = r.out.trim().split(/\r?\n/).slice(-2).join(' ').slice(0, 200)
+  return `${name} failed to start: ${why}${tail ? ` — ${tail}` : ''}. An antivirus may have blocked or removed it.`
 }
 
-async function ffmpegWorks(): Promise<boolean> {
-  return (await run(ffmpegPath(), ['-version'], 20_000)).code === 0
+async function readYtdlpVersion(): Promise<{ version: string | null; run: RunResult }> {
+  const r = await run(ytdlpPath(), ['--version'], 20_000)
+  return { version: r.code === 0 ? r.out.trim().split(/\r?\n/).pop() || null : null, run: r }
+}
+
+async function ffmpegCheck(): Promise<RunResult> {
+  return run(ffmpegPath(), ['-version'], 20_000)
+}
+
+/** Run both helpers once and report what happened (used by the diagnostics report). */
+export async function probeBinaries(): Promise<{ ytdlp: string; ffmpeg: string }> {
+  const show = (name: string, file: string, r: RunResult): string =>
+    `${existsSync(file) ? 'present' : 'MISSING'}: ${file} — ${
+      r.code === 0 ? r.out.trim().split(/\r?\n/)[0] : explainRun(name, r)
+    }`
+  return {
+    ytdlp: show('yt-dlp', ytdlpPath(), (await readYtdlpVersion()).run),
+    ffmpeg: show('ffmpeg', ffmpegPath(), await ffmpegCheck())
+  }
 }
 
 /** Make sure yt-dlp and FFmpeg exist (downloaded on first run) and refresh yt-dlp once a day. */
@@ -97,27 +146,34 @@ export async function ensureBinaries(): Promise<void> {
     if (!yt || !ff) throw new Error(`Unsupported platform: ${process.platform}/${process.arch}`)
 
     if (!existsSync(ytdlpPath())) await download(yt, 'yt-dlp')
-    let version = await readYtdlpVersion()
-    if (!version) {
+    let ytCheck = await readYtdlpVersion()
+    if (!ytCheck.version) {
       // corrupted binary → fetch again
       rmSync(ytdlpPath(), { force: true })
       await download(yt, 'yt-dlp')
-      version = await readYtdlpVersion()
+      ytCheck = await readYtdlpVersion()
     }
-    if (!version) throw new Error('yt-dlp failed to start')
+    const version = ytCheck.version
+    if (!version) throw new Error(explainRun('yt-dlp', ytCheck.run))
 
-    if (!existsSync(ffmpegPath()) || !(await ffmpegWorks())) {
+    if (!existsSync(ffmpegPath()) || (await ffmpegCheck()).code !== 0) {
       rmSync(ffmpegPath(), { force: true })
       await download(ff, 'ffmpeg')
-      if (!(await ffmpegWorks())) throw new Error('ffmpeg failed to start')
+      const r = await ffmpegCheck()
+      if (r.code !== 0) throw new Error(explainRun('ffmpeg', r))
     }
 
+    retries = 0
     setState({ phase: 'ready', version })
     if (Date.now() - meta.data.lastUpdateCheck > DAY) {
       void updateYtdlp().catch(() => undefined)
     }
   } catch (e) {
-    setState({ phase: 'error', message: e instanceof Error ? e.message : String(e) })
+    setState({ phase: 'error', message: describeError(e) })
+    if (retries < 3) {
+      retries++
+      setTimeout(() => void ensureBinaries(), 30_000 * retries).unref()
+    }
   }
 }
 
@@ -129,7 +185,7 @@ export async function updateYtdlp(): Promise<BinaryState> {
   await run(ytdlpPath(), ['-U'], 180_000)
   meta.data.lastUpdateCheck = Date.now()
   meta.save()
-  const version = await readYtdlpVersion()
+  const { version } = await readYtdlpVersion()
   if (version) setState({ phase: 'ready', version })
   return state
 }

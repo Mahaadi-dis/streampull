@@ -43,6 +43,7 @@ import {
   retry
 } from './services/queue'
 import { getSettings, updateSettings } from './services/settings'
+import { runDiagnostics } from './services/diagnostics'
 import { checkForUpdate } from './services/updates'
 import { applyWindowTheme } from './windowTheme'
 import { analyze } from './services/ytdlp'
@@ -143,6 +144,7 @@ export function registerIpc(getWin: () => BrowserWindow | null): void {
     if (isValidUrl(u)) return shell.openExternal(u)
   })
 
+  ipcMain.handle('app:diagnostics', () => runDiagnostics())
   ipcMain.handle('update:check', () => (getSettings().checkUpdates ? checkForUpdate() : null))
 
   // Embedded browser

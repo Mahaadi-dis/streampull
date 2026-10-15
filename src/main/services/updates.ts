@@ -1,4 +1,4 @@
-import { app } from 'electron'
+import { app, net } from 'electron'
 import type { UpdateInfo } from '@shared/types'
 import { isNewerVersion } from '@shared/version'
 
@@ -13,7 +13,7 @@ const RELEASES_PAGE = `https://github.com/${REPO}/releases`
  */
 export async function checkForUpdate(): Promise<UpdateInfo | null> {
   try {
-    const res = await fetch(RELEASES_API, {
+    const res = await net.fetch(RELEASES_API, {
       headers: { Accept: 'application/vnd.github+json', 'User-Agent': `StreamPull/${app.getVersion()}` },
       signal: AbortSignal.timeout(10_000)
     })

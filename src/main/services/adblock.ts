@@ -1,4 +1,4 @@
-import { app } from 'electron'
+import { app, net } from 'electron'
 import { promises as fs } from 'fs'
 import { join } from 'path'
 import { ElectronBlocker } from '@ghostery/adblocker-electron'
@@ -17,8 +17,11 @@ let starting = false
 
 export const getAdEngine = (): ElectronBlocker | null => engine
 
+// Chromium's network stack (system proxy and certificates), not Node's fetch.
+const netFetch = ((url: string, init?: RequestInit) => net.fetch(String(url), init)) as unknown as typeof fetch
+
 const load = (path: string): Promise<ElectronBlocker> =>
-  ElectronBlocker.fromPrebuiltAdsAndTracking(fetch, {
+  ElectronBlocker.fromPrebuiltAdsAndTracking(netFetch, {
     path,
     read: (p) => fs.readFile(p),
     write: (p, data) => fs.writeFile(p, data)

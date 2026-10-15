@@ -6,6 +6,7 @@ import { useApp } from '@/store/app'
 export function EngineBanner(): React.JSX.Element {
   const t = useT()
   const binary = useApp((s) => s.binary)
+  const setPage = useApp((s) => s.setPage)
   const show = binary.phase === 'downloading' || binary.phase === 'error'
   return (
     <AnimatePresence>
@@ -45,9 +46,14 @@ export function EngineBanner(): React.JSX.Element {
               )}
             </div>
             {binary.phase === 'error' && (
-              <button className="btn-ghost" onClick={() => window.api.updateYtdlp()}>
-                {t('bin.retry')}
-              </button>
+              <div className="flex shrink-0 flex-col gap-2 sm:flex-row">
+                <button className="btn-ghost" onClick={() => window.api.updateYtdlp()}>
+                  {t('bin.retry')}
+                </button>
+                <button className="btn-ghost" onClick={() => setPage('settings')}>
+                  {t('bin.diag')}
+                </button>
+              </div>
             )}
           </div>
         </motion.div>

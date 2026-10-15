@@ -100,11 +100,19 @@ textarea,
   }
 }
 
+/* "Reduced motion" (Windows: Settings > Accessibility > Visual effects > Animation effects off): drop the decorative
+   motion and make transitions instant. Looping animations must NOT get a ~0 duration — that makes spinners and
+   shimmers flicker wildly — so the decorative ones are switched off and functional spinners keep running. */
 @media (prefers-reduced-motion: reduce) {
+  .animate-float,
+  .animate-shimmer,
+  .animate-pulse,
+  .animate-ping {
+    animation: none !important;
+  }
   *,
   *::before,
   *::after {
-    animation-duration: 0.01ms !important;
     transition-duration: 0.01ms !important;
   }
 }

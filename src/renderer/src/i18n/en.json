@@ -177,5 +177,12 @@
   "update.get": "Get the update",
   "update.dismiss": "Dismiss",
   "set.checkUpdates": "Check for updates",
-  "set.checkUpdatesHint": "On start-up the app asks GitHub whether a newer version exists and shows a notice. Nothing is installed automatically."
+  "set.checkUpdatesHint": "On start-up the app asks GitHub whether a newer version exists and shows a notice. Nothing is installed automatically.",
+  "set.diag": "Diagnostics",
+  "set.diagHint": "Checks the download engine, your connection to GitHub and YouTube, and runs a test. Copy the result if you need help.",
+  "set.diagRun": "Run diagnostics",
+  "set.diagRunning": "Checking…",
+  "set.diagCopy": "Copy report",
+  "set.diagCopied": "Copied",
+  "bin.diag": "Diagnostics"
 }

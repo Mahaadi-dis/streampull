@@ -35,6 +35,11 @@ jobs:
         env:
           # Builds are unsigned for now.
           CSC_IDENTITY_AUTO_DISCOVERY: 'false'
+      # Run the packaged app on this clean machine; if it cannot install its engine, analyze, download or detect
+      # videos, nothing gets published.
+      - name: Smoke test the packaged app
+        if: runner.os == 'Windows'
+        run: ./scripts/smoke.ps1 -Exe release\win-unpacked\StreamPull.exe
       - uses: actions/upload-artifact@v4
         with:
           name: installers-${{ matrix.os }}

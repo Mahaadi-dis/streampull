@@ -188,6 +188,7 @@ export const mockApi: Api = {
   openDownloadDir: noop,
   openExternal: noop,
   checkForUpdate: async () => null,
+  runDiagnostics: async () => 'StreamPull (dev preview)\n\n== Engine ==\nyt-dlp: present - 2026.08.19\n\n== Network ==\nhttps://github.com\n  OK (HTTP 200, 120 ms)',
   browserSetBounds: noop,
   browserNavigate: noop,
   browserBack: noop,
