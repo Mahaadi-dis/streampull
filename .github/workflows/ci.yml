@@ -37,4 +37,4 @@ jobs:
       - run: npm run dist:win
         env:
           CSC_IDENTITY_AUTO_DISCOVERY: 'false'
-      - run: ./scripts/smoke.ps1 -Exe releasewin-unpackedStreamPull.exe
+      - run: ./scripts/smoke.ps1 -Exe release/win-unpacked/StreamPull.exe
