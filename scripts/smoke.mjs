@@ -17,10 +17,19 @@ const PORT = Number(process.argv[2] || 9333)
 const USERDATA = process.env.SMOKE_USERDATA
 const DOWNLOADS = process.env.SMOKE_DOWNLOADS
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms))
-const log = (...a) => console.log(new Date().toISOString().slice(11, 19), ...a)
+const lines = []
+const log = (...a) => {
+  const line = [new Date().toISOString().slice(11, 19), ...a].join(' ')
+  lines.push(line)
+  console.log(line)
+}
+// On GitHub Actions, failures are also written as annotations: those are readable without being signed in.
+const annotate = (level, title, text) => {
+  if (process.env.GITHUB_ACTIONS) console.log(`::${level} title=${title}::${String(text).slice(0, 3500).replace(/%/g, '%25').replace(/\r/g, '').replace(/\n/g, '%0A')}`)
+}
 const results = []
 const check = (name, ok, detail = '') => {
-  results.push({ name, ok })
+  results.push({ name, ok, detail })
   log(ok ? 'PASS' : 'FAIL', name, detail)
 }
 
@@ -148,4 +157,8 @@ try {
 ws.close()
 const bad = results.filter((r) => !r.ok)
 log(`${results.length - bad.length}/${results.length} checks passed`)
+if (failed || bad.length) {
+  for (const r of bad) annotate('error', 'smoke check failed', r.name + ' ' + (r.detail || ''))
+  annotate('error', 'smoke log (tail)', lines.slice(-40).join('\n'))
+}
 process.exit(failed || bad.length ? 1 : 0)

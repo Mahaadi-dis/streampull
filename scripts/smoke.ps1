@@ -41,6 +41,11 @@ try {
   $code = $LASTEXITCODE
 }
 finally {
-  if ($proc -and -not $proc.HasExited) { & taskkill /PID $proc.Id /T /F | Out-Null }
+  if ($proc.HasExited) {
+    $msg = "The app exited by itself with code $($proc.ExitCode)."
+    Write-Host $msg
+    if ($env:GITHUB_ACTIONS) { Write-Host "::error title=smoke app exited::$msg" }
+  }
+  else { & taskkill /PID $proc.Id /T /F | Out-Null }
 }
 exit $code
