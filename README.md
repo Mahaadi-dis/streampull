@@ -56,6 +56,16 @@ Get the latest Windows build from the [**Releases**](../../releases) page:
 | `StreamPull-Setup-x.y.z.exe` | Installer (adds a Start menu entry, uninstaller) |
 | `StreamPull-x.y.z-portable.exe` | Portable — run it from anywhere, nothing to install |
 
+**System requirements**
+
+- Windows 10 or 11, 64-bit (Windows 7/8/8.1 and 32-bit Windows are not supported by Electron). Windows on ARM
+  (Surface, Snapdragon laptops) works through Windows' x64 emulation.
+- An internet connection the first time: the app downloads its two helper programs (yt-dlp and FFmpeg, ~50 MB).
+  It follows your system proxy / VPN settings. If something goes wrong, **Settings → Download engine →
+  Diagnostics** shows exactly what is blocked.
+- Every push is tested end to end on clean Windows machines (Server 2022, Server 2025 and Windows 11 ARM), with
+  Arabic-named folders and 175 % display scaling checked as well.
+
 > **Coming soon:** macOS and Linux versions are planned for the next few days.
 > Star or watch the repository to get notified when they land.
 
