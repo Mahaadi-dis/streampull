@@ -23,9 +23,15 @@ jobs:
   # A clean Windows machine (like a first install, with Arabic-named folders): the download engine must install,
   # a link must analyze and download, and the built-in browser must detect a video.
   smoke:
-    name: Smoke test (clean Windows)
-    runs-on: windows-latest
-    timeout-minutes: 20
+    name: Smoke test (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        # Windows Server 2022 (Windows 10 era), Windows Server 2025, and Windows 11 on ARM, where the x64 build
+        # runs under emulation like on Surface / Snapdragon laptops.
+        os: [windows-2022, windows-latest, windows-11-arm]
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -34,7 +40,7 @@ jobs:
           cache: npm
       - run: npm ci
       # Build the real package and test that: it is what users run.
-      - run: npm run dist:win
+      - run: npm run dist:win -- --x64
         env:
           CSC_IDENTITY_AUTO_DISCOVERY: 'false'
       - run: ./scripts/smoke.ps1 -Exe release/win-unpacked/StreamPull.exe
