@@ -18,6 +18,7 @@ const api: Api = {
   setSettings: (patch) => invoke('settings:set', patch),
   chooseFolder: () => invoke('dialog:folder'),
   readClipboard: () => invoke('clipboard:read'),
+  copyText: (text) => invoke('clipboard:write', text),
 
   analyze: (url, cookieUrl) => invoke('media:analyze', url, cookieUrl ?? null),
 

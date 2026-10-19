@@ -154,7 +154,8 @@ function complete(item: DownloadItem, file: string | undefined): void {
       kind: isAudioQuality(item.quality) ? 'audio' : 'video',
       filePath: file,
       sizeBytes: size,
-      completedAt: Date.now()
+      completedAt: Date.now(),
+      link: item.referer || item.url
     })
   }
   if (getSettings().notifications && Notification.isSupported()) {

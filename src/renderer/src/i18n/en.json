@@ -184,5 +184,7 @@
   "set.diagRunning": "Checking…",
   "set.diagCopy": "Copy report",
   "set.diagCopied": "Copied",
-  "bin.diag": "Diagnostics"
+  "bin.diag": "Diagnostics",
+  "dl.copyLink": "Copy link",
+  "toast.linkCopied": "Link copied"
 }

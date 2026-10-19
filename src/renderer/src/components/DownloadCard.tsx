@@ -3,6 +3,7 @@ import {
   AlertCircle,
   CheckCircle2,
   FolderOpen,
+  Link2,
   Pause,
   Play,
   RotateCcw,
@@ -13,6 +14,7 @@ import {
 } from 'lucide-react'
 import type { DownloadItem } from '@shared/types'
 import { useT } from '@/i18n'
+import { useApp } from '@/store/app'
 import { formatBytes, formatDuration, formatSpeed, qualityLabel } from '@/lib/format'
 import { ProgressRing } from './ProgressRing'
 import { Thumb } from './Thumb'
@@ -22,7 +24,12 @@ const isLive = (s: DownloadItem['status']): boolean => s === 'downloading' || s 
 export function DownloadCard({ item }: { item: DownloadItem }): React.JSX.Element {
   const t = useT()
   const api = window.api
+  const toast = useApp((s) => s.toast)
   const { status } = item
+  const copyLink = async (): Promise<void> => {
+    await api.copyText(item.referer || item.url)
+    toast(t('toast.linkCopied'), 'ok')
+  }
   const audio = item.quality === 'mp3' || item.quality === 'm4a'
   const pct = Math.round(item.percent)
 
@@ -153,6 +160,9 @@ export function DownloadCard({ item }: { item: DownloadItem }): React.JSX.Elemen
             </button>
           </>
         )}
+        <button className="btn-icon" title={t('dl.copyLink')} onClick={copyLink}>
+          <Link2 size={17} />
+        </button>
         {(isLive(status) || status === 'queued' || status === 'paused') && (
           <button className="btn-icon hover:!text-bad" title={t('dl.cancel')} onClick={() => api.cancel(item.id)}>
             <X size={17} />

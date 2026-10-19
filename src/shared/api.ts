@@ -22,6 +22,7 @@ export interface Api {
   setSettings(patch: Partial<Settings>): Promise<Settings>
   chooseFolder(): Promise<string | null>
   readClipboard(): Promise<string>
+  copyText(text: string): Promise<void>
 
   analyze(url: string, cookieUrl?: string | null): Promise<AnalyzeResult>
 

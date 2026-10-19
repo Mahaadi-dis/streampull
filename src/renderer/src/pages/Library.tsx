@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
-import { FileWarning, FolderOpen, Library as LibIcon, Play, RotateCw, Search, Trash2 } from 'lucide-react'
+import { FileWarning, FolderOpen, Library as LibIcon, Link2, Play, RotateCw, Search, Trash2 } from 'lucide-react'
 import type { HistoryItem } from '@shared/types'
 import { useLang, useT } from '@/i18n'
 import { formatBytes, qualityLabel, timeAgo } from '@/lib/format'
@@ -31,6 +31,11 @@ export default function Library(): React.JSX.Element {
   const remove = async (h: HistoryItem, withFile: boolean): Promise<void> => {
     await window.api.removeHistory(h.id, withFile)
     await refreshHistory()
+  }
+
+  const copyLink = async (h: HistoryItem): Promise<void> => {
+    await window.api.copyText(h.link || h.url)
+    toast(t('toast.linkCopied'), 'ok')
   }
 
   const redownload = async (h: HistoryItem): Promise<void> => {
@@ -145,6 +150,9 @@ export default function Library(): React.JSX.Element {
                   <div className="mt-2.5 flex items-center gap-1 border-t border-line pt-2.5">
                     <button className="btn-icon h-8 w-8" title={t('lib.redownload')} onClick={() => redownload(h)}>
                       <RotateCw size={15} />
+                    </button>
+                    <button className="btn-icon h-8 w-8" title={t('dl.copyLink')} onClick={() => copyLink(h)}>
+                      <Link2 size={15} />
                     </button>
                     <button className="btn-icon h-8 w-8 hover:!text-bad" title={t('lib.remove')} onClick={() => remove(h, false)}>
                       <Trash2 size={15} />

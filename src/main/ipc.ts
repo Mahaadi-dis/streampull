@@ -102,6 +102,7 @@ export function registerIpc(getWin: () => BrowserWindow | null): void {
     const r = w ? await dialog.showOpenDialog(w, opts) : await dialog.showOpenDialog(opts)
     return r.canceled ? null : r.filePaths[0]
   })
+  ipcMain.handle('clipboard:write', (_e, text: unknown) => clipboard.writeText(str(text).slice(0, 8000)))
   ipcMain.handle('clipboard:read', async () => (await clipboard.readText()).trim().slice(0, 2000))
 
   ipcMain.handle('media:analyze', (_e, url: unknown, cookieUrl: unknown) =>

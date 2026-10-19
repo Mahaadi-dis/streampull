@@ -184,5 +184,7 @@
   "set.diagRunning": "جارٍ الفحص…",
   "set.diagCopy": "نسخ التقرير",
   "set.diagCopied": "تم النسخ",
-  "bin.diag": "التشخيص"
+  "bin.diag": "التشخيص",
+  "dl.copyLink": "نسخ الرابط",
+  "toast.linkCopied": "تم نسخ الرابط"
 }

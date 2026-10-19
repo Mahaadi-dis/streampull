@@ -325,7 +325,7 @@ export default function Settings(): React.JSX.Element | null {
             <button
               className="btn-ghost mt-2"
               onClick={() => {
-                void navigator.clipboard.writeText(diag)
+                void window.api.copyText(diag)
                 toast(t('set.diagCopied'), 'ok')
               }}
             >

@@ -118,6 +118,8 @@ export interface HistoryItem {
   filePath: string
   sizeBytes: number | null
   completedAt: number
+  /** The link people copy/share: the page the video came from, else the video URL. */
+  link?: string
   fileExists?: boolean
 }
 

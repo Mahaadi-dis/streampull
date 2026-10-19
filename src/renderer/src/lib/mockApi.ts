@@ -158,6 +158,7 @@ export const mockApi: Api = {
   getSettings: async () => settings,
   setSettings: async (p) => Object.assign(settings, p),
   chooseFolder: async () => null,
+  copyText: async (text) => void navigator.clipboard?.writeText(text),
   readClipboard: async () => 'https://www.youtube.com/watch?v=demo',
   analyze: async (url) => {
     await new Promise((r) => setTimeout(r, 900))

@@ -88,7 +88,7 @@ async function main() {
 
   // 1. engine
   let state
-  for (let i = 0; i < 400; i++) {
+  for (let i = 0; i < 900; i++) {
     state = await evalIn('window.api.getBinaryState()')
     if (state?.phase === 'ready' || state?.phase === 'error') break
     if (i % 10 === 0) log('engine:', JSON.stringify(state))
@@ -153,7 +153,12 @@ async function main() {
   const tabs = await evalIn('window.api.browserTabs()')
   check('the browser has a tab showing the page', tabs?.tabs?.some((t) => t.title === 'Smoke page'), JSON.stringify(tabs?.tabs?.map((t) => t.title)))
 
-  // 6. diagnostics report is produced
+  // 6. copying a link to the clipboard (the Copy link button on download cards)
+  const sample = 'https://example.test/watch?v=smoke'
+  await evalIn(`window.api.copyText(${JSON.stringify(sample)})`)
+  check('a link can be copied to the clipboard', (await evalIn('window.api.readClipboard()')) === sample)
+
+  // 7. diagnostics report is produced
   const report = await evalIn('window.api.runDiagnostics()')
   check('the diagnostics report works', typeof report === 'string' && report.includes('== Engine =='))
   log('--- diagnostics ---\n' + report)
