@@ -190,6 +190,8 @@ export interface BrowserTab {
 export interface BrowserTabsState {
   tabs: BrowserTab[]
   activeId: string
+  /** Are the full ad-blocker filter lists active, still loading, or unavailable (basic built-in list only)? */
+  adEngine: 'loading' | 'ready' | 'offline'
 }
 
 export interface BrowserBounds {

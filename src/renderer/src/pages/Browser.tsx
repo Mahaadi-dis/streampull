@@ -19,6 +19,7 @@ import {
 } from 'lucide-react'
 import type { SniffItem } from '@shared/types'
 import { isBookmarked, suggest } from '@shared/bookmarks'
+import { videoPageSite } from '@shared/pageVideo'
 import { useT } from '@/i18n'
 import { useApp } from '@/store/app'
 import { useBrowserLists } from '@/lib/useBrowserLists'
@@ -28,6 +29,8 @@ import TabStrip from '@/components/browser/TabStrip'
 
 /** The first tab is opened once per app run (a ref would not survive React's dev double-mount). */
 let firstTabRequested = false
+/** Sites whose "analyze this page" card has already been shown automatically in this run. */
+const announcedSites = new Set<string>()
 
 export default function BrowserPage(): React.JSX.Element {
   const t = useT()
@@ -51,10 +54,21 @@ export default function BrowserPage(): React.JSX.Element {
   // The page lives in a native view that paints over HTML, so it steps aside while suggestions are shown.
   const overlay = suggestions.length > 0
   const starred = !!nav.url && isBookmarked(lists.bookmarks, nav.url)
+  const pageSite = videoPageSite(nav.url)
 
   useEffect(() => {
     if (!editing) setAddr(nav.url)
   }, [nav.url, editing])
+
+  // The first time a video page of a site like YouTube is opened, show the "analyze this page" card on its own,
+  // so people are not left wondering why the media list is empty while a video plays.
+  useEffect(() => {
+    if (pageSite && !announcedSites.has(pageSite)) {
+      announcedSites.add(pageSite)
+      setPanelTab('media')
+      setPanel(true)
+    }
+  }, [pageSite])
 
   useEffect(() => {
     if (!firstTabRequested && tabs.tabs.length === 0) {
@@ -244,7 +258,12 @@ export default function BrowserPage(): React.JSX.Element {
 
         <button
           className={`btn-icon relative ${adBlock ? 'text-emerald-300' : 'text-violet-200/50'}`}
-          title={adBlock ? t('br.adblockOn', { n: blocked }) : t('br.adblockOff')}
+          title={
+            adBlock
+              ? t('br.adblockOn', { n: blocked }) +
+                (tabs.adEngine === 'ready' ? '' : ' — ' + t(tabs.adEngine === 'offline' ? 'br.adblockOffline' : 'br.adblockLoading'))
+              : t('br.adblockOff')
+          }
           aria-label={t('br.adblock')}
           aria-pressed={adBlock}
           onClick={() => void updateSettings({ adBlock: !adBlock })}
@@ -272,7 +291,12 @@ export default function BrowserPage(): React.JSX.Element {
         >
           <History size={18} />
         </button>
-        <button className="btn-ghost !px-3 !py-2" disabled={start} onClick={analyzePage} title={t('br.analyzePageHint')}>
+        <button
+          className={`!px-3 !py-2 ${pageSite ? 'btn-primary shadow-glow' : 'btn-ghost'}`}
+          disabled={start}
+          onClick={analyzePage}
+          title={t('br.analyzePageHint')}
+        >
           <ScanSearch size={16} /> {t('br.analyzePage')}
         </button>
         <button
@@ -328,6 +352,8 @@ export default function BrowserPage(): React.JSX.Element {
                 onTab={setPanelTab}
                 onClose={() => setPanel(false)}
                 navTitle={nav.title}
+                pageSite={pageSite}
+                onAnalyzePage={analyzePage}
                 sniffed={sniffed}
                 onDownload={download}
                 onClearMedia={() => void api.clearSniffed()}

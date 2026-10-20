@@ -14,8 +14,16 @@ const MAX_AGE_MS = 7 * 24 * 3600 * 1000
 
 let engine: ElectronBlocker | null = null
 let starting = false
+let lastError = ''
+let attempts = 0
 
 export const getAdEngine = (): ElectronBlocker | null => engine
+export const getAdEngineError = (): string => lastError
+
+/** 'ready': the full filter lists are active. 'offline': they could not be loaded (the basic built-in list is used). */
+export function getAdEngineState(): 'loading' | 'ready' | 'offline' {
+  return engine ? 'ready' : lastError ? 'offline' : 'loading'
+}
 
 // Chromium's network stack (system proxy and certificates), not Node's fetch.
 const netFetch = ((url: string, init?: RequestInit) => net.fetch(String(url), init)) as unknown as typeof fetch
@@ -27,8 +35,11 @@ const load = (path: string): Promise<ElectronBlocker> =>
     write: (p, data) => fs.writeFile(p, data)
   })
 
-/** Load (and if stale, refresh) the engine in the background. `onReady` fires once with the engine. */
-export function startAdEngine(onReady: (e: ElectronBlocker) => void): void {
+/**
+ * Load (and if stale, refresh) the engine in the background. `onChange` fires when it becomes ready or fails; a
+ * failure (offline, blocked …) is retried a few times with growing pauses.
+ */
+export function startAdEngine(onChange: (e: ElectronBlocker | null) => void): void {
   if (starting || engine) return
   starting = true
   const cache = join(app.getPath('userData'), 'adblock-engine.bin')
@@ -51,9 +62,14 @@ export function startAdEngine(onReady: (e: ElectronBlocker) => void): void {
         }
       }
       engine = e
-      onReady(e)
-    } catch {
-      starting = false // offline on first run: try again next time the browser opens
+      lastError = ''
+      onChange(e)
+    } catch (err) {
+      starting = false
+      lastError = err instanceof Error ? err.message : String(err)
+      onChange(null)
+      // offline / blocked: try again later instead of waiting for the next launch
+      if (++attempts <= 5) setTimeout(() => startAdEngine(onChange), 60_000 * attempts).unref()
     }
   })()
 }

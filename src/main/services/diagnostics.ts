@@ -1,6 +1,7 @@
-import { app, net, session } from 'electron'
+import { app, net, screen, session } from 'electron'
 import { homedir, release, type, arch, cpus, totalmem } from 'os'
 import { describeError, getBinaryState, probeBinaries } from './binaries'
+import { getBrowserStats } from './browser'
 import { getSettings } from './settings'
 import { analyze, currentProxyArgs, refreshProxy } from './ytdlp'
 
@@ -38,6 +39,13 @@ export async function runDiagnostics(): Promise<string> {
   const bins = await probeBinaries()
   add(`yt-dlp: ${mask(bins.ytdlp)}`)
   add(`ffmpeg: ${mask(bins.ffmpeg)}`)
+  add()
+
+  add('== Built-in browser ==')
+  const bs = getBrowserStats()
+  add(`UI language: ${app.getLocale()}${bs.rtlMirror ? ' (right-to-left: page view position is mirrored)' : ''} | display scale: ${screen.getPrimaryDisplay().scaleFactor}`)
+  add(`Ad blocker: filter lists ${bs.engine}${bs.engineError ? ` (${bs.engineError})` : ''}${bs.lastError ? ` | hook error: ${bs.lastError}` : ''}`)
+  add(`Open tabs: ${bs.tabs} | requests seen: ${bs.requests} | blocked: ${bs.blocked} | responses inspected: ${bs.headers} | videos detected: ${bs.sniffed}`)
   add()
 
   add('== Network (what the app can reach) ==')

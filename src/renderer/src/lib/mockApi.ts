@@ -212,7 +212,8 @@ export const mockApi: Api = {
       { id: 't2', title: 'Vimeo — فيديوهات', url: 'https://vimeo.com/watch', loading: false, media: 0, blocked: 3 },
       { id: 't3', title: '', url: '', loading: false, media: 0, blocked: 0 }
     ],
-    activeId: 't3'
+    activeId: 't3',
+    adEngine: 'ready'
   }),
   browserNewTab: noop,
   browserSwitchTab: noop,

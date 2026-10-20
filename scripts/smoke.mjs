@@ -113,6 +113,15 @@ async function main() {
     if (req.url === '/page.html') {
       res.writeHead(200, { 'content-type': 'text/html' })
       res.end('<!doctype html><title>Smoke page</title><video src="/clip.mp4" preload="auto" muted autoplay loop width="320"></video>')
+    } else if (req.url === '/ads.html') {
+      // requests to ad / tracker hosts (cancelled by the blocker before they leave the machine)
+      res.writeHead(200, { 'content-type': 'text/html' })
+      res.end(
+        '<!doctype html><title>Ads page</title>' +
+          '<script src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js"></script>' +
+          '<img src="https://securepubads.g.doubleclick.net/pixel.gif">' +
+          '<script src="https://static.hotjar.com/c/hotjar-1.js"></script>'
+      )
     } else if (req.url?.startsWith('/clip.mp4')) {
       const data = readFileSync(clip)
       res.writeHead(200, { 'content-type': 'video/mp4', 'content-length': data.length, 'accept-ranges': 'none' })
@@ -152,6 +161,24 @@ async function main() {
   check('the browser detects the video on a page', sniffed.some((s) => s.url.includes('clip.mp4')), JSON.stringify(sniffed.map((s) => s.url)))
   const tabs = await evalIn('window.api.browserTabs()')
   check('the browser has a tab showing the page', tabs?.tabs?.some((t) => t.title === 'Smoke page'), JSON.stringify(tabs?.tabs?.map((t) => t.title)))
+
+  // 5b. the ad blocker: the full filter lists must load, and ad / tracker requests must get cancelled
+  let adEngine = ''
+  for (let i = 0; i < 90; i++) {
+    adEngine = (await evalIn('window.api.browserTabs()'))?.adEngine
+    if (adEngine === 'ready') break
+    await sleep(2000)
+  }
+  check('the ad blocker loads its filter lists', adEngine === 'ready', adEngine)
+  await evalIn(`window.api.browserNavigate(${JSON.stringify(base + '/ads.html')})`)
+  let blocked = 0
+  for (let i = 0; i < 10; i++) {
+    await sleep(1500)
+    const st = await evalIn('window.api.browserTabs()')
+    blocked = st?.tabs?.find((t) => t.id === st.activeId)?.blocked ?? 0
+    if (blocked >= 3) break
+  }
+  check('ad and tracker requests are blocked', blocked >= 3, 'blocked: ' + blocked)
 
   // 6. copying a link to the clipboard (the Copy link button on download cards)
   const sample = 'https://example.test/watch?v=smoke'

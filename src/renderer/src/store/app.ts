@@ -71,7 +71,7 @@ export const useApp = create<AppState>((set, get) => ({
   analysis: { status: 'idle' },
   toasts: [],
   nav: { url: '', title: '', loading: false, canGoBack: false, canGoForward: false },
-  tabs: { tabs: [], activeId: '' },
+  tabs: { tabs: [], activeId: '', adEngine: 'loading' },
   update: null,
   sniffed: [],
   tabLoading: null,

@@ -5,9 +5,11 @@ import { join } from 'path'
 import type { BrowserBounds, BrowserNav, BrowserTab, BrowserTabsState, SniffItem } from '@shared/types'
 import { Request } from '@ghostery/adblocker-electron'
 import { isAdHost, isAdRequest } from '@shared/adblock'
+import { isRtlLocale, mirrorX } from '@shared/rtl'
 import { classifyResponse } from '@shared/sniffRules'
 import { isValidUrl, toBrowserUrl } from '@shared/ytdlpArgs'
-import { getAdEngine, startAdEngine } from './adblock'
+import { getAdEngine, getAdEngineError, getAdEngineState, startAdEngine } from './adblock'
+import { describeError } from './binaries'
 import { addVisit, setVisitTitle } from './browserData'
 import { getSettings } from './settings'
 
@@ -65,8 +67,18 @@ function tabInfo(t: Tab): BrowserTab {
 }
 
 export function getTabsState(): BrowserTabsState {
-  return { tabs: tabs.filter(alive).map(tabInfo), activeId }
+  return { tabs: tabs.filter(alive).map(tabInfo), activeId, adEngine: getAdEngineState() }
 }
+
+/** Counters for the diagnostics report: are the request hooks actually being hit? */
+const stats = { requests: 0, headers: 0, blocked: 0, sniffed: 0, lastError: '' }
+export const getBrowserStats = (): typeof stats & { engine: string; engineError: string; tabs: number; rtlMirror: boolean } => ({
+  ...stats,
+  engine: getAdEngineState(),
+  engineError: getAdEngineError(),
+  tabs: tabs.filter(alive).length,
+  rtlMirror: isRtlLocale(app.getLocale())
+})
 
 const emitNav = (): void => send('browser:nav', navOf(active()))
 
@@ -110,6 +122,7 @@ function addSniffed(
     pageTitle: wc.isDestroyed() ? '' : wc.getTitle()
   }
   t.sniffed = [...t.sniffed, item].slice(-MAX_SNIFFED)
+  stats.sniffed++
   if (t.id === activeId) send('browser:sniff', item)
   emitTabs()
 }
@@ -143,8 +156,10 @@ function installRequestHooks(s: Session): void {
   // Ad blocker: cancel sub-resource requests to known ad and tracker hosts.
   s.webRequest.onBeforeRequest({ urls: ['http://*/*', 'https://*/*'] }, (details, cb) => {
     const t = details.webContentsId != null ? byContents.get(details.webContentsId) : undefined
+    if (alive(t)) stats.requests++
     if (alive(t) && details.resourceType !== 'mainFrame' && getSettings().adBlock && shouldBlock(t, details)) {
       t.blocked++
+      stats.blocked++
       emitTabs()
       cb({ cancel: true })
       return
@@ -155,6 +170,7 @@ function installRequestHooks(s: Session): void {
   s.webRequest.onHeadersReceived({ urls: ['http://*/*', 'https://*/*'] }, (details, cb) => {
     const t = details.webContentsId != null ? byContents.get(details.webContentsId) : undefined
     if (alive(t)) {
+      stats.headers++
       const c = classifyResponse(details.url, details.statusCode, details.responseHeaders ?? {}, details.resourceType)
       if (c) addSniffed(t, c, details.url)
     }
@@ -174,11 +190,16 @@ export function syncAdBlock(): void {
   const s = ses()
   const e = getAdEngine()
   if (e) {
-    const on = getSettings().adBlock
-    if (on && !e.isBlockingEnabled(s)) e.enableBlockingInSession(s)
-    else if (!on && e.isBlockingEnabled(s)) e.disableBlockingInSession(s)
+    try {
+      const on = getSettings().adBlock
+      if (on && !e.isBlockingEnabled(s)) e.enableBlockingInSession(s)
+      else if (!on && e.isBlockingEnabled(s)) e.disableBlockingInSession(s)
+    } catch (err) {
+      stats.lastError = describeError(err) // the engine could not hook the session; our own hooks below still run
+    }
   }
   installRequestHooks(s)
+  emitTabs()
 }
 
 let hooked = false
@@ -193,7 +214,7 @@ function hookSession(): void {
   s.setPermissionCheckHandler(() => false)
 
   installRequestHooks(s)
-  startAdEngine(() => syncAdBlock())
+  syncAdBlock() // the filter lists may already be loaded (they start with the app)
 
   // A clicked download link: don't save anywhere, just offer it in the media list.
   s.on('will-download', (e, item, wc) => {
@@ -338,6 +359,8 @@ function removeTab(id: string, destroy: boolean): void {
 export function initBrowser(win: () => BrowserWindow | null, emit: Send): void {
   getWin = win
   send = emit
+  // Load the ad-blocker filter lists in the background right away, so they are ready before the first page opens.
+  startAdEngine(() => syncAdBlock())
 }
 
 export function closeAllTabs(): void {
@@ -359,12 +382,12 @@ export function setBounds(b: BrowserBounds | null): void {
   const content = win && !win.isDestroyed() ? win.getContentBounds() : null
   const x = Math.max(0, Math.round(b.x * z))
   const y = Math.max(0, Math.round(b.y * z))
-  lastBounds = {
-    x,
-    y,
-    width: Math.max(0, Math.min(Math.round(b.width * z), content ? content.width - x : Infinity)),
-    height: Math.max(0, Math.min(Math.round(b.height * z), content ? content.height - y : Infinity))
-  }
+  const width = Math.max(0, Math.min(Math.round(b.width * z), content ? content.width - x : Infinity))
+  const height = Math.max(0, Math.min(Math.round(b.height * z), content ? content.height - y : Infinity))
+  // With a right-to-left OS language (Arabic Windows …) Chromium mirrors native views, which put the page on top
+  // of the sidebar. Hand it the mirrored x so it lands where the layout wants it.
+  const parentWidth = win && !win.isDestroyed() ? win.contentView.getBounds().width : (content?.width ?? 0)
+  lastBounds = { x: isRtlLocale(app.getLocale()) ? mirrorX(x, width, parentWidth) : x, y, width, height }
   pageVisible = true
   applyVisibility()
 }

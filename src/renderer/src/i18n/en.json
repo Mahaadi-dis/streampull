@@ -186,5 +186,10 @@
   "set.diagCopied": "Copied",
   "bin.diag": "Diagnostics",
   "dl.copyLink": "Copy link",
-  "toast.linkCopied": "Link copied"
+  "toast.linkCopied": "Link copied",
+  "br.adblockLoading": "loading the filter lists, using the basic list for now",
+  "br.adblockOffline": "could not download the filter lists, using the basic list (will retry)",
+  "br.pageVideo": "Video page detected ({site})",
+  "br.pageVideoHint": "{site} streams video in small pieces, so it can't be caught from the network. Analyze the page and pick a quality.",
+  "br.pageVideoAction": "Analyze page and choose quality"
 }

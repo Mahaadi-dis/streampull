@@ -1,5 +1,5 @@
 import { motion } from 'framer-motion'
-import { Clock, Download, FileVideo, Radio, Star, Trash2, X } from 'lucide-react'
+import { Clock, Download, FileVideo, Radio, ScanSearch, Star, Trash2, X } from 'lucide-react'
 import type { Bookmark, Visit } from '@shared/bookmarks'
 import { hostOf } from '@shared/bookmarks'
 import type { SniffItem } from '@shared/types'
@@ -13,6 +13,9 @@ interface Props {
   onTab: (t: PanelTab) => void
   onClose: () => void
   navTitle: string
+  /** The current page is a single-video page on a site yt-dlp understands (YouTube, TikTok …). */
+  pageSite: string | null
+  onAnalyzePage: () => void
   sniffed: SniffItem[]
   onDownload: (s: SniffItem, index: number) => void
   onClearMedia: () => void
@@ -109,8 +112,26 @@ export default function BrowserPanel(p: Props): React.JSX.Element {
               </div>
             )}
             <div className="min-h-0 flex-1 space-y-2.5 overflow-y-auto px-3 pb-4 pt-2">
+              {p.pageSite && (
+                <div className="rounded-xl border border-brand-light/30 bg-brand/10 p-3">
+                  <div className="flex items-start gap-3">
+                    <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-gradient-to-br from-brand-deep/60 to-brand/30 text-brand-light">
+                      <ScanSearch size={19} />
+                    </span>
+                    <div className="min-w-0 flex-1">
+                      <div className="text-sm font-semibold">{t('br.pageVideo', { site: p.pageSite })}</div>
+                      <div className="mt-1 text-xs leading-relaxed text-violet-200/60">{t('br.pageVideoHint', { site: p.pageSite })}</div>
+                    </div>
+                  </div>
+                  <button className="btn-primary mt-3 w-full !py-2" onClick={p.onAnalyzePage}>
+                    <ScanSearch size={16} /> {t('br.pageVideoAction')}
+                  </button>
+                </div>
+              )}
               {p.sniffed.length === 0
-                ? empty(<Radio size={26} />, t('br.mediaEmpty'), t('br.mediaEmptyHint'))
+                ? p.pageSite
+                  ? null
+                  : empty(<Radio size={26} />, t('br.mediaEmpty'), t('br.mediaEmptyHint'))
                 : p.sniffed.map((s, i) => (
                     <motion.div
                       key={s.id}
