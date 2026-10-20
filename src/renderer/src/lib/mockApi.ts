@@ -148,7 +148,7 @@ const info = (url: string): MediaInfo =>
       }
     : {
         url,
-        title: settings.lang === 'ar' ? 'شروق الشمس فوق الجبال — تصوير بطيء 4K' : 'Sunrise over the mountains — 4K timelapse',
+        title: settings.lang === 'ar' ? 'طائر البجع على الرصيف — تصوير بطيء 4K' : 'Pelican on the pier — 4K timelapse',
         thumbnail: thumb(7),
         duration: 1234,
         uploader: settings.lang === 'ar' ? 'إطارات الشمال' : 'Nordic Frames',

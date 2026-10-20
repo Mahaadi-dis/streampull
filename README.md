@@ -13,7 +13,7 @@
 
 [العربية](README.ar.md) · English
 
-<img src="docs/screenshots/home-en.png" alt="StreamPull — home screen" width="820" />
+<img src="docs/demo/demo-en.gif" alt="StreamPull demo: paste a link, pick a quality, download" width="820" />
 
 </div>
 

@@ -12,7 +12,7 @@
 
 العربية · [English](README.md)
 
-<img src="docs/screenshots/home-ar.png" alt="الشاشة الرئيسية" width="820" />
+<img src="docs/demo/demo-ar.gif" alt="عرض سريع: الصق الرابط، اختر الجودة، نزّل" width="820" />
 
 </div>
 
