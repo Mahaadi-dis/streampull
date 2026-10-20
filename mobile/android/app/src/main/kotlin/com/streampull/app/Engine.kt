@@ -7,6 +7,7 @@ import com.yausername.youtubedl_android.YoutubeDLException
 import com.yausername.youtubedl_android.YoutubeDLRequest
 import org.json.JSONObject
 import java.util.UUID
+import java.util.concurrent.locks.ReentrantReadWriteLock
 import kotlin.concurrent.thread
 
 /** Owns the bundled yt-dlp + FFmpeg (youtubedl-android): initialisation, updates and JSON queries. */
@@ -14,6 +15,23 @@ object Engine {
     private const val DAY = 24L * 60 * 60 * 1000
 
     private lateinit var app: Context
+
+    /**
+     * yt-dlp is replaced on disk by an update; a run that starts meanwhile would import a half-written file
+     * ("zipimport.ZipImportError: bad local file header"). Runs share the read lock, the update takes the write lock.
+     */
+    private val files = ReentrantReadWriteLock()
+
+    /** Runs [block] (a yt-dlp process) while no update is replacing the engine. */
+    fun <T> running(block: () -> T): T {
+        val l = files.readLock()
+        l.lock()
+        try {
+            return block()
+        } finally {
+            l.unlock()
+        }
+    }
 
     @Volatile
     var state: JSONObject = JSONObject().put("phase", "checking")
@@ -54,11 +72,15 @@ object Engine {
     @Synchronized
     fun update(): JSONObject {
         if (state.optString("phase") != "ready") return state
+        val l = files.writeLock()
+        l.lock()
         try {
             YoutubeDL.updateYoutubeDL(app, YoutubeDL.UpdateChannel.STABLE)
             prefs.edit().putLong("lastUpdate", System.currentTimeMillis()).apply()
         } catch (_: Throwable) {
             // keep the bundled/previous version; the user can retry from Settings
+        } finally {
+            l.unlock()
         }
         set(ready())
         return state
@@ -88,7 +110,7 @@ object Engine {
             }
         }
         return try {
-            val res = YoutubeDL.execute(req, id, null)
+            val res = running { YoutubeDL.execute(req, id, null) }
             JSONObject().put("ok", true).put("raw", JSONObject(res.out.trim()))
         } catch (e: YoutubeDL.CanceledException) {
             failure("network", if (timedOut) "timeout" else "canceled")

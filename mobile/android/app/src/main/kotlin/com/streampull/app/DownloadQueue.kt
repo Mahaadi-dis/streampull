@@ -222,7 +222,7 @@ object DownloadQueue {
 
         var failure: String? = null
         try {
-            YoutubeDL.execute(req, item.id, callback)
+            Engine.running { YoutubeDL.execute(req, item.id, callback) }
         } catch (_: YoutubeDL.CanceledException) {
             // handled through `stopping` below
         } catch (e: YoutubeDLException) {
