@@ -4,10 +4,11 @@
 
 # StreamPull
 
-**Download videos and audio from almost any site — in a modern desktop app with switchable color themes.**
+**Download videos and audio from almost any site — a modern desktop app for Windows and an Android app, with switchable color themes.**
 
-![License: MIT](https://img.shields.io/badge/license-MIT-8b5cf6)
-![Platforms](https://img.shields.io/badge/Windows-available-7c3aed)
+![License: MIT](https://img.shields.io/badge/desktop-MIT-8b5cf6)
+![License: GPL-3.0](https://img.shields.io/badge/android-GPL--3.0-8b5cf6)
+![Platforms](https://img.shields.io/badge/Windows%20%7C%20Android-available-7c3aed)
 ![Built with](https://img.shields.io/badge/built%20with-Electron%20%2B%20yt--dlp%20%2B%20FFmpeg-c084fc)
 
 [العربية](README.ar.md) · English
@@ -16,7 +17,7 @@
 
 </div>
 
-StreamPull is a desktop alternative to browser extensions like *Video DownloadHelper*: paste a link
+StreamPull is a desktop (and, new in 0.4.0, Android) alternative to browser extensions like *Video DownloadHelper*: paste a link
 **or** browse inside the app and let it catch the videos for you. It is powered by
 [yt-dlp](https://github.com/yt-dlp/yt-dlp) (1000+ supported sites) and [FFmpeg](https://ffmpeg.org).
 
@@ -36,6 +37,8 @@ StreamPull is a desktop alternative to browser extensions like *Video DownloadHe
 - **Library** — history with search, filters, *open file*, *show in folder*, *download again*.
 - **Color themes** — Violet, Ocean, Emerald, Rose, Sunset or Midnight black; change it any time in *Settings → Appearance*.
 - **Arabic first, English too** — full RTL layout, switchable at any time.
+- **On your phone too** — the Android app does the same job: paste a link or **share it from any app**, pick a quality,
+  and get notifications while it downloads in the background (see [Android](#android)).
 - **Auto‑updating engine** — yt-dlp refreshes itself daily, because sites change constantly.
 - **Private by design** — no accounts, no telemetry, nothing leaves your machine except the downloads you start.
 
@@ -49,7 +52,7 @@ StreamPull is a desktop alternative to browser extensions like *Video DownloadHe
 
 ## Download
 
-Get the latest Windows build from the [**Releases**](../../releases) page:
+Get the latest build from the [**Releases**](../../releases) page. **Windows:**
 
 | File | What it is |
 | --- | --- |
@@ -68,7 +71,7 @@ Get the latest Windows build from the [**Releases**](../../releases) page:
 
 ### Android
 
-Starting with v0.4.0 the release page also has an **Android** app (Flutter, in [`mobile/`](mobile)):
+Starting with v0.4.0 the release page also has an **Android** app (built with Flutter, source in [`mobile/`](mobile)):
 `StreamPull-x.y.z-android-arm64-v8a.apk` fits almost every phone from the last years (older 32‑bit phones:
 `armeabi-v7a`; emulators: `x86_64`). It needs Android 10 or newer, you may have to allow "install unknown apps" for
 your browser or file manager once, and you can **share a link from any app** (YouTube, TikTok, Instagram …) straight
@@ -85,7 +88,7 @@ On first launch the app downloads **yt-dlp** and **FFmpeg** (about 50 MB, one ti
 
 ## Build from source
 
-Requires Node.js 22+.
+**Desktop** — requires Node.js 22+. (The Android app is built differently, see [mobile/README.md](mobile/README.md).)
 
 ```bash
 git clone https://github.com/Mahaadi-dis/streampull.git
@@ -111,6 +114,8 @@ renderer (React)  ──IPC──▶  main process (Electron)  ──spawn──
 - `src/main` — queue, yt-dlp/FFmpeg management, embedded browser + media sniffing, IPC (inputs are validated).
 - `src/preload` — the small, typed `window.api` bridge (context isolation on, sandbox on).
 - `src/renderer` — React UI, Tailwind, Framer Motion, Zustand, Arabic/English strings.
+- `mobile` — the Android app: Flutter UI, the same download logic ported to Dart (tested with the same vectors), and a Kotlin
+  download engine on [youtubedl-android](https://github.com/yausername/youtubedl-android). Every push is tested on an Android emulator in CI.
 - The embedded browser runs in its own isolated session with **all permissions denied**, and the web content has no access to the app API.
 - On start-up the app asks GitHub for the latest release and shows a notice if there is a newer one (turn it off in Settings). Nothing is downloaded or installed automatically.
 
@@ -119,6 +124,8 @@ renderer (React)  ──IPC──▶  main process (Electron)  ──spawn──
 - **DRM‑protected** services (Netflix, Disney+, …) are not supported and never will be.
 - Signing in with a **Google account** inside the built‑in browser is often blocked by Google.
 - The ad blocker needs an internet connection the first time to download its filter lists (EasyList / EasyPrivacy, refreshed weekly); until then a small built-in list of ad networks is used.
+- The Android app has no built-in browser yet (the desktop app does), and the APKs are not on Google Play — Google does not allow
+  downloaders for sites like YouTube there, so you install the APK from the Releases page.
 - macOS and Linux versions are coming soon (see above).
 
 ## Legal
@@ -134,4 +141,5 @@ Translations are just two JSON files under `src/renderer/src/i18n/`.
 
 ## License
 
-[MIT](LICENSE). Third‑party components are listed in [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).
+The desktop app is [MIT](LICENSE). The Android app in [`mobile/`](mobile) is [GPL‑3.0](mobile/LICENSE), because it bundles
+`youtubedl-android`. Third‑party components are listed in [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).
