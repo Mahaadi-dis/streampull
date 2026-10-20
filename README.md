@@ -48,7 +48,46 @@ StreamPull is a desktop (and, new in 0.4.0, Android) alternative to browser exte
 </p>
 <p align="center">
   <img src="docs/screenshots/settings-en.png" width="400" alt="Settings with theme picker" />
+  <img src="docs/screenshots/downloads-en.png" width="400" alt="Downloads" />
 </p>
+
+### Six color themes
+
+Violet, Ocean, Emerald, Rose, Sunset and Midnight black — on the desktop and on Android, in Arabic and English.
+
+<p align="center">
+  <img src="docs/screenshots/themes-en.png" width="820" alt="The six themes on the desktop app" />
+</p>
+
+### On Android
+
+<p align="center">
+  <img src="docs/screenshots/android/analyze-en.png" width="190" alt="Android: analyzed link with the quality picker" />
+  <img src="docs/screenshots/android/downloads-en.png" width="190" alt="Android: downloads" />
+  <img src="docs/screenshots/android/library-en.png" width="190" alt="Android: library" />
+  <img src="docs/screenshots/android/settings-en.png" width="190" alt="Android: settings" />
+</p>
+<p align="center">
+  <img src="docs/screenshots/android/themes-en.png" width="820" alt="The six themes on Android" />
+</p>
+
+<details>
+<summary>Arabic interface (right-to-left)</summary>
+
+<p align="center">
+  <img src="docs/screenshots/themes-ar.png" width="820" alt="Desktop themes, Arabic" />
+</p>
+<p align="center">
+  <img src="docs/screenshots/android/analyze-ar.png" width="190" alt="Android (Arabic): analyzed link" />
+  <img src="docs/screenshots/android/downloads-ar.png" width="190" alt="Android (Arabic): downloads" />
+  <img src="docs/screenshots/android/library-ar.png" width="190" alt="Android (Arabic): library" />
+  <img src="docs/screenshots/android/settings-ar.png" width="190" alt="Android (Arabic): settings" />
+</p>
+<p align="center">
+  <img src="docs/screenshots/android/themes-ar.png" width="820" alt="Android themes, Arabic" />
+</p>
+
+</details>
 
 ## Download
 

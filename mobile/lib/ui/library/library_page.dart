@@ -176,13 +176,19 @@ class _LibraryCard extends StatelessWidget {
           }),
           action(Icons.folder_open_rounded, m.t('lib.folder'), m.showInFolder),
           action(Icons.delete_outline_rounded, m.t('lib.remove'), () => m.removeHistory(h.id, deleteFile: false), tone: c.bad),
-          const Spacer(),
-          if (h.fileExists)
-            TextButton(
-              style: TextButton.styleFrom(foregroundColor: c.textDim, textStyle: const TextStyle(fontSize: 12)),
-              onPressed: () => m.removeHistory(h.id, deleteFile: true),
-              child: Text(m.t('lib.removeFile')),
-            ),
+          // Takes what is left of the row, so a long label shrinks instead of overflowing on narrow phones.
+          Expanded(
+            child: h.fileExists
+                ? Align(
+                    alignment: AlignmentDirectional.centerEnd,
+                    child: TextButton(
+                      style: TextButton.styleFrom(foregroundColor: c.textDim, textStyle: const TextStyle(fontFamily: fontFamily, fontSize: 12, fontWeight: FontWeight.w600)),
+                      onPressed: () => m.removeHistory(h.id, deleteFile: true),
+                      child: Text(m.t('lib.removeFile'), maxLines: 1, overflow: TextOverflow.ellipsis),
+                    ),
+                  )
+                : const SizedBox.shrink(),
+          ),
         ]),
       ]),
     );

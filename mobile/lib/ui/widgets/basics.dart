@@ -59,6 +59,10 @@ class Pill extends StatelessWidget {
 
 /// A video/audio thumbnail with a duration badge, or a placeholder when there is none.
 class MediaThumb extends StatelessWidget {
+  /// Lets tests (and the README screenshot generator) draw thumbnails without a network.
+  @visibleForTesting
+  static Widget Function(String src)? debugImage;
+
   const MediaThumb({super.key, this.src, this.audio = false, this.duration, this.aspect = 16 / 9, this.radius = 14});
 
   final String? src;
@@ -78,7 +82,7 @@ class MediaThumb extends StatelessWidget {
         child: Stack(fit: StackFit.expand, children: [
           DecoratedBox(decoration: BoxDecoration(gradient: LinearGradient(colors: [c.surface3, c.surface2]))),
           if (src != null)
-            Image.network(src!, fit: BoxFit.cover, gaplessPlayback: true, errorBuilder: (_, _, _) => const SizedBox.shrink())
+            (debugImage?.call(src!) ?? Image.network(src!, fit: BoxFit.cover, gaplessPlayback: true, errorBuilder: (_, _, _) => const SizedBox.shrink()))
           else
             Icon(audio ? Icons.music_note_rounded : Icons.movie_outlined, color: c.brandLight.withValues(alpha: 0.6), size: 28),
           if (audio && src != null) Positioned(top: 6, left: 6, child: Icon(Icons.music_note_rounded, size: 16, color: c.text)),

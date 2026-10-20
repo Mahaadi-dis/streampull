@@ -39,7 +39,7 @@ class DownloadCard extends StatelessWidget {
           SizedBox(
             width: 104,
             child: Stack(alignment: Alignment.center, children: [
-              MediaThumb(src: item.thumbnail, audio: item.isAudio, duration: item.duration, radius: 12),
+              MediaThumb(src: item.thumbnail, audio: item.isAudio, duration: live ? null : item.duration, radius: 12),
               if (live) Container(decoration: BoxDecoration(color: Colors.black.withValues(alpha: 0.45), shape: BoxShape.circle), padding: const EdgeInsets.all(4), child: ProgressRing(percent: item.percent, size: 40, busy: s == 'processing')),
             ]),
           ),

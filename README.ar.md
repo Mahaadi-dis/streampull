@@ -48,7 +48,46 @@ StreamPull بديل مكتبي (ومن الإصدار 0.4.0 لأندرويد ك�
 </p>
 <p align="center">
   <img src="docs/screenshots/settings-ar.png" width="400" alt="الإعدادات واختيار الثيم" />
+  <img src="docs/screenshots/downloads-ar.png" width="400" alt="التنزيلات" />
 </p>
+
+### ست ثيمات ألوان
+
+بنفسجي ومحيط وزمردي وورد وغروب وأسود منتصف الليل — في تطبيق الكمبيوتر وتطبيق أندرويد، بالعربي والإنجليزي.
+
+<p align="center">
+  <img src="docs/screenshots/themes-ar.png" width="820" alt="ثيمات تطبيق الكمبيوتر" />
+</p>
+
+### على أندرويد
+
+<p align="center">
+  <img src="docs/screenshots/android/analyze-ar.png" width="190" alt="أندرويد: رابط محلَّل مع اختيار الجودة" />
+  <img src="docs/screenshots/android/downloads-ar.png" width="190" alt="أندرويد: التنزيلات" />
+  <img src="docs/screenshots/android/library-ar.png" width="190" alt="أندرويد: المكتبة" />
+  <img src="docs/screenshots/android/settings-ar.png" width="190" alt="أندرويد: الإعدادات" />
+</p>
+<p align="center">
+  <img src="docs/screenshots/android/themes-ar.png" width="820" alt="ثيمات أندرويد" />
+</p>
+
+<details>
+<summary>الواجهة الإنجليزية</summary>
+
+<p align="center">
+  <img src="docs/screenshots/themes-en.png" width="820" alt="Desktop themes, English" />
+</p>
+<p align="center">
+  <img src="docs/screenshots/android/analyze-en.png" width="190" alt="Android: analyzed link" />
+  <img src="docs/screenshots/android/downloads-en.png" width="190" alt="Android: downloads" />
+  <img src="docs/screenshots/android/library-en.png" width="190" alt="Android: library" />
+  <img src="docs/screenshots/android/settings-en.png" width="190" alt="Android: settings" />
+</p>
+<p align="center">
+  <img src="docs/screenshots/android/themes-en.png" width="820" alt="Android themes, English" />
+</p>
+
+</details>
 
 ## التنزيل
 

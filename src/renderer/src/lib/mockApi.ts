@@ -6,6 +6,24 @@ import { DEFAULT_QUALITIES } from '@shared/types'
 const now = Date.now()
 const thumb = (n: number): string => `https://picsum.photos/seed/vg${n}/640/360`
 
+// Sample titles in both languages, so screenshots do not mix Arabic and English in one list.
+const TITLES: Array<[en: string, ar: string]> = [
+  ['Coastal cliffs at golden hour', 'المنحدرات الساحلية في الساعة الذهبية'],
+  ['Old harbour, a morning walk', 'ميناء قديم، جولة صباحية'],
+  ['Night sky over the countryside', 'سماء الليل فوق الريف'],
+  ['Hiking the green ridge trail', 'مشي على مسار القمة الخضراء'],
+  ['Beach lifeguard tower, summer', 'برج إنقاذ الشاطئ في الصيف'],
+  ['City skyline in black and white', 'أفق المدينة بالأبيض والأسود'],
+  ['Slow mornings: coffee and rain', 'صباحات هادئة: قهوة ومطر'],
+  ['A desert road trip, day three', 'رحلة الصحراء، اليوم الثالث'],
+  ['How a mechanical watch works', 'كيف تعمل الساعة الميكانيكية'],
+  ['Rooftop gardening for beginners', 'زراعة الأسطح للمبتدئين'],
+  ['Ten minutes of calm ocean waves', 'عشر دقائق من أمواج البحر الهادئة'],
+  ['Street food tour, the old market', 'جولة أكل الشارع في السوق القديم']
+]
+const titleOf = (n: number): string => TITLES[Math.abs(n) % TITLES.length][settings.lang === 'ar' ? 1 : 0]
+const numOf = (id: string): number => Number(id.replace(/\D/g, '')) || 0
+
 const settings: Settings = {
   downloadDir: 'C:\\Users\\Mahdi\\Downloads\\StreamPull',
   concurrency: 3,
@@ -22,7 +40,7 @@ const settings: Settings = {
 const base = (i: number, o: Partial<DownloadItem>): DownloadItem => ({
   id: `d${i}`,
   url: `https://example.com/v/${i}`,
-  title: `مقطع تجريبي رقم ${i} — Sample video ${i}`,
+  title: titleOf(i),
   thumbnail: thumb(i),
   duration: 200 + i * 37,
   uploader: 'Channel',
@@ -49,7 +67,7 @@ let queue: DownloadItem[] = [
 const history: HistoryItem[] = Array.from({ length: 7 }, (_, i) => ({
   id: `h${i}`,
   url: `https://example.com/h/${i}`,
-  title: `فيديو محفوظ ${i + 1} — Saved clip ${i + 1}`,
+  title: titleOf(i + 4),
   thumbnail: thumb(10 + i),
   uploader: 'Channel',
   duration: 300 + i * 61,
@@ -130,10 +148,10 @@ const info = (url: string): MediaInfo =>
       }
     : {
         url,
-        title: 'كيف تبني تطبيق سطح مكتب حديث — Building a modern desktop app',
+        title: settings.lang === 'ar' ? 'شروق الشمس فوق الجبال — تصوير بطيء 4K' : 'Sunrise over the mountains — 4K timelapse',
         thumbnail: thumb(7),
         duration: 1234,
-        uploader: 'Tech Channel',
+        uploader: settings.lang === 'ar' ? 'إطارات الشمال' : 'Nordic Frames',
         site: 'Youtube',
         isPlaylist: false,
         entries: [],
@@ -167,7 +185,7 @@ export const mockApi: Api = {
     if (url.includes('instagram.com/locked')) return { ok: false, error: 'login_required' }
     return url.includes('bad') ? { ok: false, error: 'unsupported' } : { ok: true, info: info(url) }
   },
-  listQueue: async () => queue,
+  listQueue: async () => queue.map((d) => (d.id.startsWith('d') && d.id.length < 4 ? { ...d, title: titleOf(numOf(d.id)) } : d)),
   addToQueue: async (reqs) => {
     const added = reqs.map((r, i) => base(100 + queue.length + i, { ...r, status: 'queued' }))
     queue = [...queue, ...added]
@@ -181,7 +199,7 @@ export const mockApi: Api = {
   clearFinished: noop,
   onQueueUpdate: sub,
   onQueueRemove: sub,
-  listHistory: async () => history,
+  listHistory: async () => history.map((h) => ({ ...h, title: titleOf(numOf(h.id) + 4) })),
   removeHistory: noop,
   clearHistory: noop,
   openFile: async () => true,
