@@ -126,6 +126,9 @@ jobs:
           cache: true
       - run: flutter pub get
       - run: flutter test
+      - name: Install ffmpeg (to generate the test clip)
+        working-directory: .
+        run: sudo apt-get update && sudo apt-get install -y ffmpeg
       - name: Enable KVM
         working-directory: .
         run: |
