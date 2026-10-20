@@ -54,7 +54,6 @@ function Section({ title, children }: { title: string; children: React.ReactNode
   )
 }
 
-const DEVELOPER_URL = 'https://github.com/Mahaadi-dis'
 const REPO_URL = 'https://github.com/Mahaadi-dis/streampull'
 
 /** Version, "check for updates", developer and source links. */
@@ -98,11 +97,6 @@ function About(): React.JSX.Element {
             {check === 'checking' ? t('about.checking') : t('about.check')}
           </button>
         </div>
-      </Row>
-      <Row label={t('about.developer')}>
-        <button className="btn-ghost" onClick={() => void window.api.openExternal(DEVELOPER_URL)}>
-          <ExternalLink size={16} /> {t('about.github')}
-        </button>
       </Row>
       <Row label={t('about.source')}>
         <button className="btn-ghost" onClick={() => void window.api.openExternal(REPO_URL)}>

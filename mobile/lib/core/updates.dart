@@ -9,7 +9,6 @@ import 'version.dart';
 
 const repo = 'Mahaadi-dis/streampull';
 const repoUrl = 'https://github.com/$repo';
-const developerUrl = 'https://github.com/Mahaadi-dis';
 const releasesPage = '$repoUrl/releases';
 
 class UpdateInfo {

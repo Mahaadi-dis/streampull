@@ -178,14 +178,6 @@ class _AboutSectionState extends State<_AboutSection> {
         ]),
       ),
       _Row(
-        m.t('about.developer'),
-        trailing: OutlinedButton.icon(
-          onPressed: () => m.api.openExternal(developerUrl),
-          icon: const Icon(Icons.open_in_new_rounded, size: 16),
-          label: Text(m.t('about.github')),
-        ),
-      ),
-      _Row(
         m.t('about.source'),
         trailing: OutlinedButton.icon(
           onPressed: () => m.api.openExternal(repoUrl),

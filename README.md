@@ -51,7 +51,7 @@ StreamPull is a desktop (and, new in 0.4.0, Android) alternative to browser exte
   <img src="docs/screenshots/downloads-en.png" width="400" alt="Downloads" />
 </p>
 <p align="center">
-  <img src="docs/screenshots/about-en.png" width="400" alt="About: version, update check, developer" />
+  <img src="docs/screenshots/about-en.png" width="400" alt="About: version and update check" />
 </p>
 
 ### Six color themes

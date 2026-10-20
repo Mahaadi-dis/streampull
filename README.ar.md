@@ -51,7 +51,7 @@ StreamPull بديل مكتبي (ومن الإصدار 0.4.0 لأندرويد ك�
   <img src="docs/screenshots/downloads-ar.png" width="400" alt="التنزيلات" />
 </p>
 <p align="center">
-  <img src="docs/screenshots/about-ar.png" width="400" alt="حول التطبيق: الإصدار والتحقق من التحديثات والمطوّر" />
+  <img src="docs/screenshots/about-ar.png" width="400" alt="حول التطبيق: الإصدار والتحقق من التحديثات" />
 </p>
 
 ### ست ثيمات ألوان

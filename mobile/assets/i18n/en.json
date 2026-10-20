@@ -95,8 +95,6 @@
   "about.newer": "Version {version} is available.",
   "about.error": "Couldn't check for updates. Make sure you're online and try again.",
   "about.get": "Get the update",
-  "about.developer": "Developer",
-  "about.github": "GitHub",
   "about.source": "Source code",
   "about.license": "License",
   "set.about": "Notice",

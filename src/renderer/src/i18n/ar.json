@@ -95,8 +95,6 @@
   "about.newer": "الإصدار {version} متوفر.",
   "about.error": "تعذّر التحقق من التحديثات. تأكد أنك متصل بالإنترنت وحاول مرة ثانية.",
   "about.get": "احصل على التحديث",
-  "about.developer": "المطوّر",
-  "about.github": "GitHub",
   "about.source": "الكود المصدري",
   "about.license": "الرخصة",
   "set.about": "تنبيه",

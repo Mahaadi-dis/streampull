@@ -3,7 +3,7 @@ description: StreamPull for Android - download videos and audio from almost any 
 publish_to: 'none'
 
 # The release workflow overrides these from the git tag (--build-name / --build-number).
-version: 0.4.0+400
+version: 0.4.1+401
 
 environment:
   sdk: ^3.8.0
