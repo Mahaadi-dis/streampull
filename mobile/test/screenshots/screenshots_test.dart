@@ -112,6 +112,7 @@ Future<ui.Image> shot(
   required String theme,
   required int tab,
   bool analyzed = false,
+  bool scrollToEnd = false,
   String? file,
 }) async {
   final s = Sample(lang == 'ar');
@@ -136,6 +137,13 @@ Future<ui.Image> shot(
   await tester.pumpWidget(RepaintBoundary(key: key, child: StreamPullApp(model: model)));
   for (var i = 0; i < 6; i++) {
     await tester.pump(const Duration(milliseconds: 250));
+  }
+
+  if (scrollToEnd) {
+    await tester.drag(find.byType(ListView).first, const Offset(0, -6000));
+    for (var i = 0; i < 4; i++) {
+      await tester.pump(const Duration(milliseconds: 250));
+    }
   }
 
   final boundary = tester.renderObject<RenderRepaintBoundary>(find.byKey(key));
@@ -199,6 +207,7 @@ void main() {
       await shot(tester, lang: lang, theme: 'violet', tab: 1, file: 'downloads-$lang.png');
       await shot(tester, lang: lang, theme: 'violet', tab: 2, file: 'library-$lang.png');
       await shot(tester, lang: lang, theme: 'violet', tab: 3, file: 'settings-$lang.png');
+      await shot(tester, lang: lang, theme: 'violet', tab: 3, scrollToEnd: true, file: 'about-$lang.png');
     });
 
     testWidgets('themes ($lang)', (tester) async {

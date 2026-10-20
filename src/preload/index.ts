@@ -42,6 +42,8 @@ const api: Api = {
   openDownloadDir: () => invoke('shell:openDownloadDir'),
   openExternal: (url) => invoke('shell:openExternal', url),
   checkForUpdate: () => invoke('update:check'),
+  checkForUpdateNow: () => invoke('update:checkNow'),
+  appVersion: () => invoke('app:version'),
   runDiagnostics: () => invoke('app:diagnostics'),
 
   browserSetBounds: (b) => invoke('browser:bounds', b),

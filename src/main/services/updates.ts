@@ -1,35 +1,29 @@
 import { app, net } from 'electron'
 import type { UpdateInfo } from '@shared/types'
-import { isNewerVersion } from '@shared/version'
+import { evaluateRelease, type UpdateCheck } from '@shared/release'
 
 const REPO = 'Mahaadi-dis/streampull'
 const RELEASES_API = `https://api.github.com/repos/${REPO}/releases/latest`
-const RELEASES_PAGE = `https://github.com/${REPO}/releases`
 
 /**
- * Ask GitHub for the latest published release. Returns it when it is newer than the running app, else null
- * (also on any network error — update checks must never get in the way). Nothing is downloaded or installed:
- * the UI just links to the release page.
+ * Ask GitHub for the latest published release and say what that means for the running app. Nothing is downloaded
+ * or installed: the UI just links to the release page. Never throws.
  */
-export async function checkForUpdate(): Promise<UpdateInfo | null> {
+export async function checkForUpdateNow(): Promise<UpdateCheck> {
   try {
     const res = await net.fetch(RELEASES_API, {
       headers: { Accept: 'application/vnd.github+json', 'User-Agent': `StreamPull/${app.getVersion()}` },
       signal: AbortSignal.timeout(10_000)
     })
-    if (!res.ok) return null
-    const json = (await res.json()) as { tag_name?: unknown; html_url?: unknown; draft?: unknown; prerelease?: unknown }
-    const tag = typeof json.tag_name === 'string' ? json.tag_name : ''
-    if (json.draft === true || json.prerelease === true) return null
-    const current = app.getVersion()
-    if (!isNewerVersion(tag, current)) return null
-    // Only ever link to this project's own releases, whatever the response says.
-    const url =
-      typeof json.html_url === 'string' && json.html_url.startsWith(`https://github.com/${REPO}/`)
-        ? json.html_url
-        : RELEASES_PAGE
-    return { version: tag.replace(/^v/, ''), current, url }
+    if (!res.ok) return { status: 'error' }
+    return evaluateRelease(await res.json(), app.getVersion(), REPO)
   } catch {
-    return null
+    return { status: 'error' }
   }
+}
+
+/** The background check: the newer release, or null when up to date, offline or anything fails. */
+export async function checkForUpdate(): Promise<UpdateInfo | null> {
+  const r = await checkForUpdateNow()
+  return r.status === 'newer' ? r.info : null
 }

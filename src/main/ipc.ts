@@ -1,4 +1,4 @@
-import { BrowserWindow, clipboard, dialog, ipcMain, shell } from 'electron'
+import { app, BrowserWindow, clipboard, dialog, ipcMain, shell } from 'electron'
 import { existsSync, mkdirSync } from 'fs'
 import type { DownloadRequest, Settings } from '@shared/types'
 import {
@@ -44,7 +44,7 @@ import {
 } from './services/queue'
 import { getSettings, updateSettings } from './services/settings'
 import { runDiagnostics } from './services/diagnostics'
-import { checkForUpdate } from './services/updates'
+import { checkForUpdate, checkForUpdateNow } from './services/updates'
 import { applyWindowTheme } from './windowTheme'
 import { analyze } from './services/ytdlp'
 import { isValidUrl } from '@shared/ytdlpArgs'
@@ -147,6 +147,9 @@ export function registerIpc(getWin: () => BrowserWindow | null): void {
 
   ipcMain.handle('app:diagnostics', () => runDiagnostics())
   ipcMain.handle('update:check', () => (getSettings().checkUpdates ? checkForUpdate() : null))
+  // The About page's button: always asks, whatever the start-up check setting is.
+  ipcMain.handle('update:checkNow', () => checkForUpdateNow())
+  ipcMain.handle('app:version', () => app.getVersion())
 
   // Embedded browser
   ipcMain.handle('browser:bounds', (_e, b: unknown) => {

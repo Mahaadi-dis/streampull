@@ -12,6 +12,7 @@ import type {
   UpdateInfo
 } from './types'
 import type { Bookmark, Visit } from './bookmarks'
+import type { UpdateCheck } from './release'
 
 export interface Api {
   getBinaryState(): Promise<BinaryState>
@@ -47,6 +48,9 @@ export interface Api {
   openExternal(url: string): Promise<void>
   /** The newer release, if there is one (null when up to date, offline, or the check is turned off). */
   checkForUpdate(): Promise<UpdateInfo | null>
+  /** The About page's button: always asks GitHub and says whether the app is up to date, behind, or couldn't tell. */
+  checkForUpdateNow(): Promise<UpdateCheck>
+  appVersion(): Promise<string>
   /** A plain-text report (versions, helper programs, network reachability, a test analysis) for troubleshooting. */
   runDiagnostics(): Promise<string>
 

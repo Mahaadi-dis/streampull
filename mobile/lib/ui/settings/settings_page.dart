@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../core/models.dart';
 import '../../core/themes.dart';
+import '../../core/updates.dart';
 import '../../state/app_model.dart';
 import '../theme.dart';
 import '../widgets/basics.dart';
@@ -100,6 +101,8 @@ class SettingsPage extends StatelessWidget {
           if (m.binary.phase == 'error' && m.binary.message != null) Text(m.binary.message!, textDirection: TextDirection.ltr, style: TextStyle(color: c.bad, fontSize: 12)),
         ]),
 
+        const _AboutSection(),
+
         AppCard(
           child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
             Icon(Icons.info_outline_rounded, color: c.brandLight, size: 20),
@@ -109,14 +112,93 @@ class SettingsPage extends StatelessWidget {
                 Text(m.t('set.about'), style: const TextStyle(fontWeight: FontWeight.w700)),
                 const SizedBox(height: 4),
                 Text(m.t('set.disclaimer'), style: TextStyle(color: c.textDim, fontSize: 12.5, height: 1.5)),
-                const SizedBox(height: 8),
-                Text('StreamPull ${m.appVersion}', textDirection: TextDirection.ltr, style: TextStyle(color: c.textDim, fontSize: 12)),
               ]),
             ),
           ]),
         ),
       ]),
     );
+  }
+}
+
+/// Version, "check for updates", developer and source links.
+class _AboutSection extends StatefulWidget {
+  const _AboutSection();
+
+  @override
+  State<_AboutSection> createState() => _AboutSectionState();
+}
+
+class _AboutSectionState extends State<_AboutSection> {
+  bool _checking = false;
+  UpdateCheck? _result;
+
+  Future<void> _run(AppModel m) async {
+    setState(() => _checking = true);
+    final r = await m.checkUpdateNow();
+    if (!mounted) return;
+    setState(() {
+      _checking = false;
+      _result = r;
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final m = AppScope.of(context);
+    final result = _result;
+    final message = switch (result) {
+      null => null,
+      UpdateLatest() => m.t('about.latest'),
+      UpdateNewer(:final info) => m.t('about.newer', {'version': info.version}),
+      UpdateError() => m.t('about.error'),
+    };
+
+    return _Section(m.t('about.title'), [
+      _Row(
+        m.t('about.version'),
+        hint: message,
+        trailing: Column(crossAxisAlignment: CrossAxisAlignment.end, mainAxisSize: MainAxisSize.min, children: [
+          Pill(m.appVersion.isEmpty ? '—' : 'v${m.appVersion}'),
+          const SizedBox(height: 6),
+          OutlinedButton.icon(
+            onPressed: _checking ? null : () => _run(m),
+            icon: _checking ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2)) : const Icon(Icons.refresh_rounded, size: 18),
+            label: Text(_checking ? m.t('about.checking') : m.t('about.check')),
+          ),
+          if (result is UpdateNewer)
+            Padding(
+              padding: const EdgeInsets.only(top: 6),
+              child: FilledButton.icon(
+                onPressed: () => m.api.openExternal(result.info.url),
+                icon: const Icon(Icons.download_rounded, size: 18),
+                label: Text(m.t('about.get')),
+              ),
+            ),
+        ]),
+      ),
+      _Row(
+        m.t('about.developer'),
+        trailing: Row(mainAxisSize: MainAxisSize.min, children: [
+          Text(m.t('about.developerName'), style: const TextStyle(fontWeight: FontWeight.w700)),
+          const SizedBox(width: 10),
+          OutlinedButton.icon(
+            onPressed: () => m.api.openExternal(developerUrl),
+            icon: const Icon(Icons.open_in_new_rounded, size: 16),
+            label: Text(m.t('about.github')),
+          ),
+        ]),
+      ),
+      _Row(
+        m.t('about.source'),
+        trailing: OutlinedButton.icon(
+          onPressed: () => m.api.openExternal(repoUrl),
+          icon: const Icon(Icons.open_in_new_rounded, size: 16),
+          label: const Text(repo, textDirection: TextDirection.ltr),
+        ),
+      ),
+      _Row(m.t('about.license'), trailing: const Pill('GPL-3.0')),
+    ]);
   }
 }
 

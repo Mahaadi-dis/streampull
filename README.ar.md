@@ -50,6 +50,9 @@ StreamPull بديل مكتبي (ومن الإصدار 0.4.0 لأندرويد ك�
   <img src="docs/screenshots/settings-ar.png" width="400" alt="الإعدادات واختيار الثيم" />
   <img src="docs/screenshots/downloads-ar.png" width="400" alt="التنزيلات" />
 </p>
+<p align="center">
+  <img src="docs/screenshots/about-ar.png" width="400" alt="حول التطبيق: الإصدار والتحقق من التحديثات والمطوّر" />
+</p>
 
 ### ست ثيمات ألوان
 
@@ -66,6 +69,7 @@ StreamPull بديل مكتبي (ومن الإصدار 0.4.0 لأندرويد ك�
   <img src="docs/screenshots/android/downloads-ar.png" width="190" alt="أندرويد: التنزيلات" />
   <img src="docs/screenshots/android/library-ar.png" width="190" alt="أندرويد: المكتبة" />
   <img src="docs/screenshots/android/settings-ar.png" width="190" alt="أندرويد: الإعدادات" />
+  <img src="docs/screenshots/android/about-ar.png" width="190" alt="أندرويد: حول التطبيق" />
 </p>
 <p align="center">
   <img src="docs/screenshots/android/themes-ar.png" width="820" alt="ثيمات أندرويد" />
@@ -82,6 +86,7 @@ StreamPull بديل مكتبي (ومن الإصدار 0.4.0 لأندرويد ك�
   <img src="docs/screenshots/android/downloads-en.png" width="190" alt="Android: downloads" />
   <img src="docs/screenshots/android/library-en.png" width="190" alt="Android: library" />
   <img src="docs/screenshots/android/settings-en.png" width="190" alt="Android: settings" />
+  <img src="docs/screenshots/android/about-en.png" width="190" alt="Android: about" />
 </p>
 <p align="center">
   <img src="docs/screenshots/android/themes-en.png" width="820" alt="Android themes, English" />

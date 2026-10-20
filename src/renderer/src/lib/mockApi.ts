@@ -207,6 +207,11 @@ export const mockApi: Api = {
   openDownloadDir: noop,
   openExternal: noop,
   checkForUpdate: async () => null,
+  checkForUpdateNow: async () => {
+    await new Promise((r) => setTimeout(r, 700))
+    return { status: 'latest', version: '0.4.0' }
+  },
+  appVersion: async () => '0.4.0',
   runDiagnostics: async () => 'StreamPull (dev preview)\n\n== Engine ==\nyt-dlp: present - 2026.08.19\n\n== Network ==\nhttps://github.com\n  OK (HTTP 200, 120 ms)',
   browserSetBounds: noop,
   browserNavigate: noop,

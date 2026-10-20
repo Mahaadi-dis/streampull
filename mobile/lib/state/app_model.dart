@@ -165,6 +165,12 @@ class AppModel extends ChangeNotifier {
     notifyListeners();
   }
 
+  /// The About page's button: always asks GitHub, whatever the start-up check setting is.
+  Future<UpdateCheck> checkUpdateNow() async {
+    if (appVersion.isEmpty) return const UpdateError();
+    return checkLatest(appVersion);
+  }
+
   void dismissUpdate() {
     _dismissedUpdate = update?.version ?? '';
     update = null;

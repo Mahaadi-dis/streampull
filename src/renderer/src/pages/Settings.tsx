@@ -1,7 +1,8 @@
-import { useState } from 'react'
-import { Check, ClipboardCopy, FolderOpen, Info, Loader2, RefreshCw, Stethoscope, Trash2 } from 'lucide-react'
+import { useEffect, useState } from 'react'
+import { Check, ClipboardCopy, Download, ExternalLink, FolderOpen, Info, Loader2, RefreshCw, Stethoscope, Trash2 } from 'lucide-react'
 import { THEMES } from '@shared/themes'
 import type { Lang, NameTemplate } from '@shared/types'
+import type { UpdateCheck } from '@shared/release'
 import { useT } from '@/i18n'
 import { qualityLabel } from '@/lib/format'
 import { useApp } from '@/store/app'
@@ -50,6 +51,73 @@ function Section({ title, children }: { title: string; children: React.ReactNode
       <h2 className="mb-2 px-1 text-sm font-bold text-brand-light">{title}</h2>
       <div className="card px-5">{children}</div>
     </section>
+  )
+}
+
+const DEVELOPER_URL = 'https://github.com/Mahaadi-dis'
+const REPO_URL = 'https://github.com/Mahaadi-dis/streampull'
+
+/** Version, "check for updates", developer and source links. */
+function About(): React.JSX.Element {
+  const t = useT()
+  const [version, setVersion] = useState('')
+  const [check, setCheck] = useState<'idle' | 'checking' | UpdateCheck>('idle')
+
+  useEffect(() => {
+    void window.api.appVersion().then(setVersion)
+  }, [])
+
+  const run = async (): Promise<void> => {
+    setCheck('checking')
+    setCheck(await window.api.checkForUpdateNow().catch((): UpdateCheck => ({ status: 'error' })))
+  }
+
+  const message =
+    check === 'idle' || check === 'checking'
+      ? undefined
+      : check.status === 'latest'
+        ? t('about.latest')
+        : check.status === 'newer'
+          ? t('about.newer', { version: check.info.version })
+          : t('about.error')
+
+  return (
+    <Section title={t('about.title')}>
+      <Row label={t('about.version')} hint={message}>
+        <div className="flex items-center gap-3">
+          <span className="chip" dir="ltr">
+            {version ? `v${version}` : '—'}
+          </span>
+          {typeof check === 'object' && check.status === 'newer' && (
+            <button className="btn-primary" onClick={() => void window.api.openExternal(check.info.url)}>
+              <Download size={16} /> {t('about.get')}
+            </button>
+          )}
+          <button className="btn-ghost" onClick={() => void run()} disabled={check === 'checking'}>
+            {check === 'checking' ? <Loader2 size={16} className="animate-spin" /> : <RefreshCw size={16} />}
+            {check === 'checking' ? t('about.checking') : t('about.check')}
+          </button>
+        </div>
+      </Row>
+      <Row label={t('about.developer')}>
+        <div className="flex items-center gap-3">
+          <span className="text-sm font-semibold">{t('about.developerName')}</span>
+          <button className="btn-ghost" onClick={() => void window.api.openExternal(DEVELOPER_URL)}>
+            <ExternalLink size={16} /> {t('about.github')}
+          </button>
+        </div>
+      </Row>
+      <Row label={t('about.source')}>
+        <button className="btn-ghost" onClick={() => void window.api.openExternal(REPO_URL)}>
+          <ExternalLink size={16} /> <span dir="ltr">Mahaadi-dis/streampull</span>
+        </button>
+      </Row>
+      <Row label={t('about.license')}>
+        <span className="chip" dir="ltr">
+          MIT
+        </span>
+      </Row>
+    </Section>
   )
 }
 
@@ -334,6 +402,8 @@ export default function Settings(): React.JSX.Element | null {
           </div>
         )}
       </Section>
+
+      <About />
 
       <div className="flex gap-3 rounded-2xl border border-line bg-white/[0.03] p-4 text-xs leading-relaxed text-violet-200/55">
         <Info size={18} className="mt-0.5 shrink-0 text-brand-light" />

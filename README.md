@@ -50,6 +50,9 @@ StreamPull is a desktop (and, new in 0.4.0, Android) alternative to browser exte
   <img src="docs/screenshots/settings-en.png" width="400" alt="Settings with theme picker" />
   <img src="docs/screenshots/downloads-en.png" width="400" alt="Downloads" />
 </p>
+<p align="center">
+  <img src="docs/screenshots/about-en.png" width="400" alt="About: version, update check, developer" />
+</p>
 
 ### Six color themes
 
@@ -66,6 +69,7 @@ Violet, Ocean, Emerald, Rose, Sunset and Midnight black — on the desktop and o
   <img src="docs/screenshots/android/downloads-en.png" width="190" alt="Android: downloads" />
   <img src="docs/screenshots/android/library-en.png" width="190" alt="Android: library" />
   <img src="docs/screenshots/android/settings-en.png" width="190" alt="Android: settings" />
+  <img src="docs/screenshots/android/about-en.png" width="190" alt="Android: about" />
 </p>
 <p align="center">
   <img src="docs/screenshots/android/themes-en.png" width="820" alt="The six themes on Android" />
@@ -82,6 +86,7 @@ Violet, Ocean, Emerald, Rose, Sunset and Midnight black — on the desktop and o
   <img src="docs/screenshots/android/downloads-ar.png" width="190" alt="Android (Arabic): downloads" />
   <img src="docs/screenshots/android/library-ar.png" width="190" alt="Android (Arabic): library" />
   <img src="docs/screenshots/android/settings-ar.png" width="190" alt="Android (Arabic): settings" />
+  <img src="docs/screenshots/android/about-ar.png" width="190" alt="أندرويد: حول التطبيق" />
 </p>
 <p align="center">
   <img src="docs/screenshots/android/themes-ar.png" width="820" alt="Android themes, Arabic" />
