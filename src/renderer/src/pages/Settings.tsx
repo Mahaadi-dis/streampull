@@ -100,12 +100,9 @@ function About(): React.JSX.Element {
         </div>
       </Row>
       <Row label={t('about.developer')}>
-        <div className="flex items-center gap-3">
-          <span className="text-sm font-semibold">{t('about.developerName')}</span>
-          <button className="btn-ghost" onClick={() => void window.api.openExternal(DEVELOPER_URL)}>
-            <ExternalLink size={16} /> {t('about.github')}
-          </button>
-        </div>
+        <button className="btn-ghost" onClick={() => void window.api.openExternal(DEVELOPER_URL)}>
+          <ExternalLink size={16} /> {t('about.github')}
+        </button>
       </Row>
       <Row label={t('about.source')}>
         <button className="btn-ghost" onClick={() => void window.api.openExternal(REPO_URL)}>

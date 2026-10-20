@@ -179,15 +179,11 @@ class _AboutSectionState extends State<_AboutSection> {
       ),
       _Row(
         m.t('about.developer'),
-        trailing: Row(mainAxisSize: MainAxisSize.min, children: [
-          Text(m.t('about.developerName'), style: const TextStyle(fontWeight: FontWeight.w700)),
-          const SizedBox(width: 10),
-          OutlinedButton.icon(
-            onPressed: () => m.api.openExternal(developerUrl),
-            icon: const Icon(Icons.open_in_new_rounded, size: 16),
-            label: Text(m.t('about.github')),
-          ),
-        ]),
+        trailing: OutlinedButton.icon(
+          onPressed: () => m.api.openExternal(developerUrl),
+          icon: const Icon(Icons.open_in_new_rounded, size: 16),
+          label: Text(m.t('about.github')),
+        ),
       ),
       _Row(
         m.t('about.source'),
