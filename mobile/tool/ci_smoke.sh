@@ -25,9 +25,7 @@ if [ "$code" -ne 0 ]; then
   done
   echo "::error::Android smoke test failed (exit $code)"
   adb logcat -d | grep -iE "streampull|youtubedl|yt-dlp|Traceback|Error" | grep -viE "chatty|vold" | tail -25 | while IFS= read -r line; do
-    echo "::error::logcat: ${line//fi
-exit "$code"
-'/}"
+    echo "::error::logcat: ${line//$'\r'/}"
   done
 fi
 exit "$code"
