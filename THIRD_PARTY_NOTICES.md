@@ -17,6 +17,20 @@ Because they are fetched by the user's machine and not redistributed by this pro
 change the license of StreamPull itself. FFmpeg's source code is available at
 <https://ffmpeg.org/download.html>.
 
+## Android app (`mobile/`, GPL-3.0)
+
+The Android app is a separate work under the GPL-3.0 (see [mobile/LICENSE](mobile/LICENSE)); the rest of the
+repository stays MIT. Its APKs bundle:
+
+| Component | License |
+| --- | --- |
+| [youtubedl-android](https://github.com/yausername/youtubedl-android) (`library`, `ffmpeg`), maintained as [junkfood02/youtubedl-android](https://github.com/JunkFood02/youtubedl-android) | GPL-3.0 |
+| [yt-dlp](https://github.com/yt-dlp/yt-dlp) (shipped inside the library, updated at runtime) | Unlicense |
+| CPython (bundled by youtubedl-android) | PSF License |
+| FFmpeg builds (bundled by youtubedl-android) | GPL / LGPL, see the library's notices |
+| [Flutter](https://flutter.dev) and Dart packages | BSD-3-Clause |
+| [IBM Plex Sans Arabic](https://github.com/IBM/plex) | SIL OFL 1.1 (`mobile/assets/fonts/OFL.txt`) |
+
 ## Bundled dependencies
 
 | Package | License |

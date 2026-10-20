@@ -66,6 +66,15 @@ Get the latest Windows build from the [**Releases**](../../releases) page:
 - Every push is tested end to end on clean Windows machines (Server 2022, Server 2025 and Windows 11 ARM), with
   Arabic-named folders and 175 % display scaling checked as well.
 
+### Android
+
+Starting with v0.4.0 the release page also has an **Android** app (Flutter, in [`mobile/`](mobile)):
+`StreamPull-x.y.z-android-arm64-v8a.apk` fits almost every phone from the last years (older 32‑bit phones:
+`armeabi-v7a`; emulators: `x86_64`). It needs Android 10 or newer, you may have to allow "install unknown apps" for
+your browser or file manager once, and you can **share a link from any app** (YouTube, TikTok, Instagram …) straight
+to StreamPull. Files are saved to `Downloads/StreamPull`. The Android app is licensed GPL‑3.0 (see
+[mobile/LICENSE](mobile/LICENSE)); it has no in‑app browser yet.
+
 > **Coming soon:** macOS and Linux versions are planned for the next few days.
 > Star or watch the repository to get notified when they land.
 

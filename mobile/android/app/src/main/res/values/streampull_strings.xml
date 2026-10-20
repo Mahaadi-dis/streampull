@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="channel_downloads">Downloads</string>
+    <string name="channel_completed">Completed downloads</string>
+    <string name="notif_downloading">Downloading (%d)</string>
+    <string name="notif_done">Download complete</string>
+</resources>

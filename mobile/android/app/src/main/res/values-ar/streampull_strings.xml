@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="channel_downloads">التنزيلات</string>
+    <string name="channel_completed">التنزيلات المكتملة</string>
+    <string name="notif_downloading">جارٍ التنزيل (%d)</string>
+    <string name="notif_done">اكتمل التنزيل</string>
+</resources>
