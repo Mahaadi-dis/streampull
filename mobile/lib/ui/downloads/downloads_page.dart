@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../state/app_model.dart';
 import '../theme.dart';
+import '../widgets/basics.dart';
 import 'download_card.dart';
 
 class DownloadsPage extends StatelessWidget {
@@ -23,6 +24,19 @@ class DownloadsPage extends StatelessWidget {
             if (list.any((d) => d.isFinished)) TextButton.icon(onPressed: m.clearFinished, icon: const Icon(Icons.cleaning_services_rounded, size: 18), label: Text(m.t('dl.clearFinished'))),
           ]),
         ),
+        if (m.settings.wifiOnly && !m.downloadsAllowed && list.any((d) => d.status == 'queued'))
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 4, 16, 4),
+            child: AppCard(
+              tint: c.warn,
+              child: Row(children: [
+                Icon(Icons.wifi_off_rounded, color: c.warn, size: 20),
+                const SizedBox(width: 10),
+                Expanded(child: Text(m.t('dl.waitingWifi'), style: const TextStyle(fontSize: 13, height: 1.4))),
+                TextButton(onPressed: m.allowMobileData, child: Text(m.t('dl.useMobileData'))),
+              ]),
+            ),
+          ),
         Expanded(
           child: list.isEmpty
               ? Center(

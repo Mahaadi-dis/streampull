@@ -54,4 +54,8 @@ class FakeNativeApi implements NativeApi {
   Future<void> openExternal(String url) async {}
   @override
   Future<String?> takePendingLink() async => null;
+  @override
+  Future<bool> downloadsAllowed() async => true;
+  @override
+  Future<void> allowMobileData() async {}
 }

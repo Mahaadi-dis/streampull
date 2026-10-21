@@ -9,7 +9,15 @@ cd "$(dirname "$0")/.."
 work="$(mktemp -d)"
 ffmpeg -loglevel error -f lavfi -i "testsrc=duration=10:size=640x360:rate=25" -f lavfi -i "sine=frequency=440:duration=10" \
   -c:v libx264 -preset ultrafast -c:a aac -shortest -movflags +faststart "$work/clip.mp4" || { echo "::error::could not generate the test clip"; exit 1; }
-(cd "$work" && python3 -m http.server 8099 --bind 127.0.0.1 >/dev/null 2>&1) &
+ffmpeg -loglevel error -f lavfi -i "testsrc2=size=640x360:duration=1" -frames:v 1 "$work/cover.png" || { echo "::error::could not generate the cover image"; exit 1; }
+cat > "$work/page.html" <<HTML
+<!doctype html><html><head><meta charset="utf-8"><title>Test Song</title>
+<meta property="og:title" content="Test Song">
+<meta property="og:image" content="http://127.0.0.1:8099/cover.png">
+<meta property="og:video" content="http://127.0.0.1:8099/clip.mp4">
+</head><body><video src="http://127.0.0.1:8099/clip.mp4" controls></video></body></html>
+HTML
+python3 tool/test_server.py "$work" 8099 &
 server=$!
 trap 'kill $server 2>/dev/null' EXIT
 adb reverse tcp:8099 tcp:8099

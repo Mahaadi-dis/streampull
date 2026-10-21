@@ -21,15 +21,18 @@ object DownloadQueue {
     private val lock = Any()
     private val items = LinkedHashMap<String, QueueItem>()
     private val running = HashMap<String, Thread>()
-    private val stopping = HashMap<String, String>() // id -> "pause" | "cancel"
+    private val stopping = HashMap<String, String>() // id -> "pause" | "cancel" | "requeue"
     private val lastEmit = HashMap<String, Long>()
     private var lastServiceUpdate = 0L
 
     @Volatile var emitUpdate: (JSONObject) -> Unit = {}
     @Volatile var emitRemoved: (String) -> Unit = {}
+    @Volatile var emitNetwork: (Boolean) -> Unit = {}
 
     fun init(ctx: Context) {
         app = ctx.applicationContext
+        NetworkGuard.onChange = { networkChanged() }
+        NetworkGuard.init(app)
     }
 
     // ---- queries -------------------------------------------------------------------------------
@@ -117,7 +120,26 @@ object DownloadQueue {
     }
 
     /** The concurrency limit may have changed. */
-    fun settingsChanged() = pump()
+    fun settingsChanged() {
+        NetworkGuard.settingChanged()
+        networkChanged()
+    }
+
+    /** Wi-Fi came or went, or the "Wi-Fi only" setting changed. */
+    fun networkChanged() {
+        val allowed = NetworkGuard.allowed()
+        if (!allowed) {
+            // Stop what is running; the partial files stay and the downloads continue when Wi-Fi is back.
+            synchronized(lock) {
+                for (id in running.keys.toList()) {
+                    stopping[id] = "requeue"
+                    YoutubeDL.destroyProcessById(id)
+                }
+            }
+        }
+        emitNetwork(allowed)
+        if (allowed) pump() else syncService()
+    }
 
     fun openFile(ctx: Context, id: String): Boolean {
         val uri = get(id)?.fileUri ?: HistoryStore.get(id)?.uri ?: return false
@@ -132,6 +154,10 @@ object DownloadQueue {
     private fun tempDir(id: String) = File(app.cacheDir, "dl/$id")
 
     private fun pump() {
+        if (!NetworkGuard.allowed()) {
+            syncService()
+            return
+        }
         synchronized(lock) {
             val limit = SettingsStore.concurrency
             for (item in items.values) {
@@ -237,6 +263,12 @@ object DownloadQueue {
         }
 
         when {
+            why == "requeue" -> {
+                item.status = "queued"
+                item.speed = null
+                item.eta = null
+                emit(item, true)
+            }
             why == "pause" -> {
                 item.status = "paused"
                 item.speed = null
@@ -277,6 +309,10 @@ object DownloadQueue {
         try {
             val size = file.length()
             val saved = MediaSaver.save(app, file, file.name)
+            // Subtitles saved as separate files go next to the video.
+            temp.listFiles()?.filter { it.isFile && it != file && it.extension.lowercase() in setOf("srt", "vtt", "ass") }?.forEach {
+                runCatching { MediaSaver.save(app, it, it.name) }
+            }
             temp.deleteRecursively()
             item.status = "completed"
             item.percent = 100.0

@@ -29,6 +29,9 @@ class QueueItem(
     val cookieUrl: String?,
     val referer: String?,
     val expectedBytes: Long?,
+    /** Only this part of the video (seconds), or null for all of it. */
+    val clipStart: Long?,
+    val clipEnd: Long?,
     val createdAt: Long
 ) {
     @Volatile var status: String = "queued"
@@ -53,6 +56,7 @@ class QueueItem(
         putN("expectedBytes", expectedBytes)
         putN("referer", referer)
         putN("cookieUrl", cookieUrl)
+        if (clipStart != null && clipEnd != null) put("clip", JSONObject().put("start", clipStart).put("end", clipEnd))
         put("status", status)
         put("percent", if (percent.isNaN()) 0.0 else percent)
         putN("speed", speed)
@@ -82,6 +86,8 @@ class QueueItem(
                 cookieUrl = r.optStringOrNull("cookieUrl"),
                 referer = r.optStringOrNull("referer"),
                 expectedBytes = r.optLongOrNull("expectedBytes"),
+                clipStart = r.optJSONObject("clip")?.optLongOrNull("start"),
+                clipEnd = r.optJSONObject("clip")?.optLongOrNull("end"),
                 createdAt = System.currentTimeMillis()
             )
         }

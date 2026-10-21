@@ -78,6 +78,9 @@ class AppModel extends ChangeNotifier {
   UpdateInfo? update;
   String appVersion = '';
 
+  /// False while "Wi-Fi only" is on and only mobile data is available: queued downloads wait.
+  bool downloadsAllowed = true;
+
   /// Bumped when a link is shared in, so the Home input can show it.
   String? sharedLink;
   int sharedLinkSeq = 0;
@@ -105,6 +108,7 @@ class AppModel extends ChangeNotifier {
     }
     history = await api.historyList();
     appVersion = await api.appVersion();
+    downloadsAllowed = await api.downloadsAllowed();
     _sub = api.events.listen(_onEvent);
     notifyListeners();
     unawaited(_takeLink());
@@ -135,6 +139,8 @@ class AppModel extends ChangeNotifier {
         if (e.item.status == 'completed' && prev?.status != 'completed') unawaited(refreshHistory());
       case QueueRemovedEvent():
         downloads.remove(e.id);
+      case NetworkEvent():
+        downloadsAllowed = e.allowed;
       case LinkEvent():
         unawaited(_takeLink());
         return;
@@ -201,6 +207,14 @@ class AppModel extends ChangeNotifier {
     i18n.lang = settings.lang;
     notifyListeners();
     if (patch.containsKey('checkUpdates')) unawaited(_checkUpdate());
+    if (patch.containsKey('wifiOnly')) downloadsAllowed = await api.downloadsAllowed();
+    notifyListeners();
+  }
+
+  Future<void> allowMobileData() async {
+    await api.allowMobileData();
+    downloadsAllowed = await api.downloadsAllowed();
+    notifyListeners();
   }
 
   Future<void> updateEngine() async {

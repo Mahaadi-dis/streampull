@@ -4,13 +4,14 @@
 import 'dart:math' as math;
 
 import 'channel.dart';
+import 'download_options.dart';
 import 'models.dart';
 
 bool isAudioQuality(String q) => q == 'mp3' || q == 'm4a';
 
 /// Format-selection args for a chosen quality.
-List<String> formatArgs(String quality) {
-  if (quality == 'mp3') return ['-f', 'ba/b', '-x', '--audio-format', 'mp3', '--audio-quality', '0'];
+List<String> formatArgs(String quality, [String mp3Quality = 'best']) {
+  if (quality == 'mp3') return ['-f', 'ba/b', '-x', '--audio-format', 'mp3', '--audio-quality', mp3QualityArg(mp3Quality)];
   if (quality == 'm4a') return ['-f', 'ba[ext=m4a]/ba/b', '-x', '--audio-format', 'm4a'];
   final h = int.tryParse(quality);
   final filter = h != null && h > 0 ? '[height<=$h]' : '';
@@ -52,8 +53,11 @@ List<String> buildExtraArgs({
   String? referer,
   required NameTemplate nameTemplate,
   String speedLimit = '',
+  DownloadPrefs prefs = const DownloadPrefs(),
+  ClipRange? clip,
 }) {
-  final args = [...formatArgs(quality), '-o', '${outputNameFor(fileName, nameTemplate)}.%(ext)s'];
+  final name = '${outputNameFor(fileName, nameTemplate)}${clip == null ? '' : clipSuffix(clip)}';
+  final args = [...formatArgs(quality, prefs.mp3Quality), ...downloadOptionArgs(quality, prefs, clip), '-o', '$name.%(ext)s'];
   if (speedLimit.isNotEmpty) args.addAll(['--limit-rate', speedLimit]);
   if (referer != null && referer.isNotEmpty) args.addAll(['--referer', referer]);
   return args;

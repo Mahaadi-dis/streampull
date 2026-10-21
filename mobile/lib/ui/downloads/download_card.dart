@@ -3,6 +3,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
+import '../../core/download_options.dart';
 import '../../core/format.dart';
 import '../../core/models.dart';
 import '../../state/app_model.dart';
@@ -54,6 +55,10 @@ class DownloadCard extends StatelessWidget {
                 Flexible(child: Text(m.t('dl.status.$s'), style: TextStyle(color: color, fontSize: 12.5, fontWeight: FontWeight.w700))),
                 const SizedBox(width: 8),
                 Pill(qualityLabel(item.quality, m.t('media.best'))),
+                if (item.clip != null) ...[
+                  const SizedBox(width: 6),
+                  Flexible(child: Pill(m.t('dl.clip', {'from': formatClipTime(item.clip!.start), 'to': formatClipTime(item.clip!.end)}))),
+                ],
               ]),
               if (s == 'downloading')
                 Padding(

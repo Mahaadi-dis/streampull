@@ -33,6 +33,7 @@ class StreamPullChannel(private val context: Context, messenger: BinaryMessenger
         Engine.onState = { emit("binaryState", it) }
         DownloadQueue.emitUpdate = { emit("queueUpdate", it) }
         DownloadQueue.emitRemoved = { emit("queueRemoved", JSONObject().put("id", it)) }
+        DownloadQueue.emitNetwork = { emit("network", JSONObject().put("allowed", it)) }
         ShareBus.listener = { emit("link", JSONObject()) }
     }
 
@@ -43,6 +44,7 @@ class StreamPullChannel(private val context: Context, messenger: BinaryMessenger
         Engine.onState = null
         DownloadQueue.emitUpdate = {}
         DownloadQueue.emitRemoved = {}
+        DownloadQueue.emitNetwork = {}
         ShareBus.listener = null
         sink = null
     }
@@ -148,6 +150,11 @@ class StreamPullChannel(private val context: Context, messenger: BinaryMessenger
                 if (url.startsWith("http://") || url.startsWith("https://")) {
                     context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url)).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
                 }
+                result.success(null)
+            }
+            "downloadsAllowed" -> result.success(NetworkGuard.allowed())
+            "allowMobileData" -> {
+                NetworkGuard.allowMobileData()
                 result.success(null)
             }
             "takePendingLink" -> result.success(mapOf("url" to ShareBus.take()?.url))

@@ -1,3 +1,5 @@
+import 'download_options.dart';
+
 // Data types shared by the whole app. They mirror src/shared/types.ts of the desktop app; the JSON field names
 // are the same ones the native (Kotlin) layer produces, so `fromJson` can read its messages directly.
 
@@ -206,6 +208,7 @@ class DownloadRequest {
     this.referer,
     this.cookieUrl,
     this.fileName,
+    this.clip,
   });
 
   final String url;
@@ -218,6 +221,9 @@ class DownloadRequest {
   final String? referer;
   final String? cookieUrl;
   final String? fileName;
+
+  /// Only download this part of the video.
+  final ClipRange? clip;
 }
 
 class DownloadItem {
@@ -240,6 +246,7 @@ class DownloadItem {
     this.filePath,
     this.error,
     this.errorDetail,
+    this.clip,
   });
 
   final String id;
@@ -249,6 +256,7 @@ class DownloadItem {
   final double? duration;
   final String? uploader;
   final String quality;
+  final ClipRange? clip;
   final String? referer;
 
   /// queued | downloading | processing | paused | completed | error | canceled
@@ -285,6 +293,7 @@ class DownloadItem {
         filePath: _toStr(j['filePath']),
         error: j['error'] == null ? null : ErrorCode.parse(j['error'] as String?),
         errorDetail: _toStr(j['errorDetail']),
+        clip: ClipRange.fromJson(j['clip']),
         createdAt: _toInt(j['createdAt']) ?? 0,
       );
 }
@@ -361,6 +370,9 @@ class Settings {
     this.speedLimit = '',
     this.notifications = true,
     this.checkUpdates = true,
+    this.prefs = const DownloadPrefs(),
+    this.clipEnabled = true,
+    this.wifiOnly = false,
   });
 
   final int concurrency;
@@ -374,6 +386,15 @@ class Settings {
   final bool notifications;
   final bool checkUpdates;
 
+  /// Cover art, tags, MP3 bitrate and subtitles.
+  final DownloadPrefs prefs;
+
+  /// Show the "cut a clip" option on the media card.
+  final bool clipEnabled;
+
+  /// Only download on Wi-Fi (or another unmetered connection).
+  final bool wifiOnly;
+
   factory Settings.fromJson(Map<String, dynamic> j) => Settings(
         concurrency: _toInt(j['concurrency']) ?? 3,
         lang: j['lang'] == 'en' ? 'en' : 'ar',
@@ -383,6 +404,16 @@ class Settings {
         speedLimit: (j['speedLimit'] as String?) ?? '',
         notifications: j['notifications'] as bool? ?? true,
         checkUpdates: j['checkUpdates'] as bool? ?? true,
+        prefs: DownloadPrefs(
+          embedCover: j['embedCover'] as bool? ?? true,
+          squareCover: j['squareCover'] as bool? ?? true,
+          embedTags: j['embedTags'] as bool? ?? true,
+          mp3Quality: isMp3Quality(j['mp3Quality']) ? j['mp3Quality'] as String : 'best',
+          subtitleMode: SubtitleMode.parse(j['subtitleMode'] as String?),
+          subtitleLangs: (j['subtitleLangs'] as String?) ?? defaultSubtitleLangs,
+        ),
+        clipEnabled: j['clipEnabled'] as bool? ?? true,
+        wifiOnly: j['wifiOnly'] as bool? ?? false,
       );
 
   Map<String, dynamic> toJson() => {
@@ -394,6 +425,14 @@ class Settings {
         'speedLimit': speedLimit,
         'notifications': notifications,
         'checkUpdates': checkUpdates,
+        'embedCover': prefs.embedCover,
+        'squareCover': prefs.squareCover,
+        'embedTags': prefs.embedTags,
+        'mp3Quality': prefs.mp3Quality,
+        'subtitleMode': prefs.subtitleMode.wire,
+        'subtitleLangs': prefs.subtitleLangs,
+        'clipEnabled': clipEnabled,
+        'wifiOnly': wifiOnly,
       };
 
   Settings copyWith({
@@ -405,6 +444,9 @@ class Settings {
     String? speedLimit,
     bool? notifications,
     bool? checkUpdates,
+    DownloadPrefs? prefs,
+    bool? clipEnabled,
+    bool? wifiOnly,
   }) =>
       Settings(
         concurrency: concurrency ?? this.concurrency,
@@ -415,5 +457,8 @@ class Settings {
         speedLimit: speedLimit ?? this.speedLimit,
         notifications: notifications ?? this.notifications,
         checkUpdates: checkUpdates ?? this.checkUpdates,
+        prefs: prefs ?? this.prefs,
+        clipEnabled: clipEnabled ?? this.clipEnabled,
+        wifiOnly: wifiOnly ?? this.wifiOnly,
       );
 }

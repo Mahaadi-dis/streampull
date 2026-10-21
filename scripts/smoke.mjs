@@ -28,6 +28,38 @@ const annotate = (level, title, text) => {
   if (process.env.GITHUB_ACTIONS) console.log(`::${level} title=${title}::${String(text).slice(0, 3500).replace(/%/g, '%25').replace(/\r/g, '').replace(/\n/g, '%0A')}`)
 }
 const results = []
+
+// ---- tiny file readers for the optional-feature checks (ID3 cover and bitrate, MP4 duration)
+const ascii = (buf, text, from = 0) => buf.indexOf(Buffer.from(text, 'latin1'), from)
+function jpegSize(buf, from) {
+  let i = buf.indexOf(Buffer.from([0xff, 0xd8]), from)
+  if (i < 0) return null
+  i += 2
+  while (i < buf.length - 9) {
+    if (buf[i] !== 0xff) {
+      i++
+      continue
+    }
+    const marker = buf[i + 1]
+    if (marker >= 0xc0 && marker <= 0xc3) return { h: buf.readUInt16BE(i + 5), w: buf.readUInt16BE(i + 7) }
+    i += 2 + buf.readUInt16BE(i + 2)
+  }
+  return null
+}
+function mp3Bitrate(buf) {
+  if (buf.length < 10 || buf.toString('latin1', 0, 3) !== 'ID3') return null
+  const size = (buf[6] << 21) | (buf[7] << 14) | (buf[8] << 7) | buf[9]
+  for (let i = 10 + size; i < buf.length - 4; i++) {
+    if (buf[i] === 0xff && (buf[i + 1] & 0xe0) === 0xe0) return [0, 32, 40, 48, 56, 64, 80, 96, 112, 128, 160, 192, 224, 256, 320, 0][buf[i + 2] >> 4]
+  }
+  return null
+}
+function mp4Duration(buf) {
+  const i = ascii(buf, 'mvhd')
+  if (i < 0 || buf[i + 4] !== 0) return null
+  const scale = buf.readUInt32BE(i + 16)
+  return scale ? buf.readUInt32BE(i + 20) / scale : null
+}
 const check = (name, ok, detail = '') => {
   results.push({ name, ok, detail })
   log(ok ? 'PASS' : 'FAIL', name, detail)
@@ -107,7 +139,9 @@ async function main() {
   mkdirSync(work, { recursive: true })
   const clip = join(work, 'clip.mp4')
   const ffmpeg = USERDATA ? join(USERDATA, 'bin', process.platform === 'win32' ? 'ffmpeg.exe' : 'ffmpeg') : 'ffmpeg'
-  const gen = spawnSync(ffmpeg, ['-y', '-f', 'lavfi', '-i', 'testsrc2=duration=12:size=640x480:rate=25', '-b:v', '1500k', '-minrate', '1500k', '-maxrate', '1500k', '-bufsize', '3000k', '-pix_fmt', 'yuv420p', clip], { encoding: 'utf8' })
+  const gen = spawnSync(ffmpeg, ['-y', '-f', 'lavfi', '-i', 'testsrc2=duration=12:size=640x480:rate=25', '-f', 'lavfi', '-i', 'sine=frequency=440:duration=12', '-c:a', 'aac', '-shortest', '-b:v', '1500k', '-minrate', '1500k', '-maxrate', '1500k', '-bufsize', '3000k', '-pix_fmt', 'yuv420p', clip], { encoding: 'utf8' })
+  const cover = join(work, 'cover.png')
+  spawnSync(ffmpeg, ['-y', '-f', 'lavfi', '-i', 'testsrc2=size=640x360:duration=1', '-frames:v', '1', cover], { encoding: 'utf8' })
   check('test video generated with the bundled FFmpeg', gen.status === 0 && existsSync(clip) && statSync(clip).size > 300 * 1024, gen.stderr?.slice(-200))
   const server = createServer((req, res) => {
     if (req.url === '/page.html') {
@@ -122,6 +156,32 @@ async function main() {
           '<img src="https://securepubads.g.doubleclick.net/pixel.gif">' +
           '<script src="https://static.hotjar.com/c/hotjar-1.js"></script>'
       )
+    } else if (req.url === '/audio.html') {
+      const origin = 'http://' + req.headers.host
+      res.writeHead(200, { 'content-type': 'text/html' })
+      res.end(
+        '<!doctype html><html><head><meta charset="utf-8"><title>Test Song</title>' +
+          '<meta property="og:title" content="Test Song">' +
+          '<meta property="og:image" content="' + origin + '/cover.png">' +
+          '<meta property="og:video" content="' + origin + '/clipr.mp4">' +
+          '</head><body><video src="' + origin + '/clipr.mp4"></video></body></html>'
+      )
+    } else if (req.url === '/cover.png') {
+      const data = readFileSync(cover)
+      res.writeHead(200, { 'content-type': 'image/png', 'content-length': data.length })
+      res.end(data)
+    } else if (req.url?.startsWith('/clipr.mp4')) {
+      const data = readFileSync(clip)
+      const m = /bytes=(\d*)-(\d*)/.exec(req.headers.range || '')
+      if (m) {
+        const start = m[1] ? Number(m[1]) : 0
+        const end = m[2] ? Math.min(Number(m[2]), data.length - 1) : data.length - 1
+        res.writeHead(206, { 'content-type': 'video/mp4', 'accept-ranges': 'bytes', 'content-range': `bytes ${start}-${end}/${data.length}`, 'content-length': end - start + 1 })
+        res.end(data.subarray(start, end + 1))
+      } else {
+        res.writeHead(200, { 'content-type': 'video/mp4', 'accept-ranges': 'bytes', 'content-length': data.length })
+        res.end(data)
+      }
     } else if (req.url?.startsWith('/clip.mp4')) {
       const data = readFileSync(clip)
       res.writeHead(200, { 'content-type': 'video/mp4', 'content-length': data.length, 'accept-ranges': 'none' })
@@ -148,6 +208,41 @@ async function main() {
   }
   const saved = item?.filePath && existsSync(item.filePath) && statSync(item.filePath).size > 1000
   check('a download completes and the file is saved', item?.status === 'completed' && !!saved, JSON.stringify({ status: item?.status, error: item?.errorDetail, file: item?.filePath }))
+
+  // 4b. optional features: MP3 at a chosen bitrate with a square cover and tags; the same with the cover turned off
+  async function downloadItem(req) {
+    const a = await evalIn(`window.api.addToQueue([${JSON.stringify(req)}])`)
+    const itemId = a?.[0]?.id
+    let it
+    for (let i = 0; i < 120 && itemId; i++) {
+      it = (await evalIn('window.api.listQueue()')).find((x) => x.id === itemId)
+      if (it && ['completed', 'error', 'canceled'].includes(it.status)) break
+      await sleep(1000)
+    }
+    return it
+  }
+  await evalIn("window.api.setSettings({ mp3Quality: '128', embedCover: true, squareCover: true, embedTags: true })")
+  const mp3 = await downloadItem({ url: base + '/audio.html', title: 'cover test', quality: 'mp3' })
+  const mp3Ok = mp3?.status === 'completed' && !!mp3.filePath && existsSync(mp3.filePath)
+  check('an MP3 download completes', mp3Ok, JSON.stringify({ status: mp3?.status, error: mp3?.errorDetail }))
+  if (mp3Ok) {
+    const bytes = readFileSync(mp3.filePath)
+    const apic = ascii(bytes, 'APIC')
+    const size = apic >= 0 ? jpegSize(bytes, apic) : null
+    check('the MP3 has the chosen bitrate (128 kbps)', mp3Bitrate(bytes) === 128, 'bitrate: ' + mp3Bitrate(bytes))
+    check('the MP3 has an embedded cover', apic >= 0 && !!size, 'apic at ' + apic)
+    check('the cover is cropped to a square', !!size && size.w === size.h, size ? size.w + 'x' + size.h : 'no cover')
+    check('the MP3 has a title tag', ascii(bytes, 'TIT2') >= 0)
+  }
+  await evalIn('window.api.setSettings({ embedCover: false })')
+  const plain = await downloadItem({ url: base + '/audio.html', title: 'no cover test', quality: 'mp3', fileName: 'no cover' })
+  check('with the cover turned off the MP3 has none', plain?.status === 'completed' && !!plain.filePath && ascii(readFileSync(plain.filePath), 'APIC') < 0, JSON.stringify({ status: plain?.status, error: plain?.errorDetail }))
+  await evalIn('window.api.setSettings({ embedCover: true })')
+
+  // 4c. a clip: seconds 2 to 6 of the 12 second video
+  const cut = await downloadItem({ url: base + '/audio.html', title: 'clip test', quality: 'best', clip: { start: 2, end: 6 } })
+  const secs = cut?.status === 'completed' && cut.filePath && existsSync(cut.filePath) ? mp4Duration(readFileSync(cut.filePath)) : null
+  check('a clip download is about 4 seconds long', secs !== null && secs >= 3 && secs <= 5.5, JSON.stringify({ status: cut?.status, error: cut?.errorDetail, seconds: secs }))
 
   // 5. the built-in browser notices the video
   await evalIn('window.api.browserSetBounds({ x: 300, y: 100, width: 800, height: 500 })')

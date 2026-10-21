@@ -31,10 +31,55 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npm test
-      - run: npm run ${{ matrix.script }}
+      # Windows code signing, when the repository has the secrets for it (see docs/windows-code-signing.md):
+      #   - Azure Artifact Signing: AZURE_TENANT_ID, AZURE_CLIENT_ID, AZURE_CLIENT_SECRET, AZURE_SIGN_ENDPOINT,
+      #     AZURE_SIGN_ACCOUNT, AZURE_SIGN_PROFILE (and optionally AZURE_SIGN_PUBLISHER)
+      #   - or a certificate file: WIN_CERT_BASE64 (the .pfx, base64) and WIN_CERT_PASSWORD
+      # Without them the build is simply unsigned, as before.
+      - name: Build
+        shell: bash
         env:
-          # Builds are unsigned for now.
           CSC_IDENTITY_AUTO_DISCOVERY: 'false'
+          CSC_LINK: ${{ secrets.WIN_CERT_BASE64 }}
+          CSC_KEY_PASSWORD: ${{ secrets.WIN_CERT_PASSWORD }}
+          AZURE_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
+          AZURE_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
+          AZURE_CLIENT_SECRET: ${{ secrets.AZURE_CLIENT_SECRET }}
+          AZURE_SIGN_ENDPOINT: ${{ secrets.AZURE_SIGN_ENDPOINT }}
+          AZURE_SIGN_ACCOUNT: ${{ secrets.AZURE_SIGN_ACCOUNT }}
+          AZURE_SIGN_PROFILE: ${{ secrets.AZURE_SIGN_PROFILE }}
+          AZURE_SIGN_PUBLISHER: ${{ secrets.AZURE_SIGN_PUBLISHER }}
+        run: |
+          args=()
+          if [ -n "$AZURE_SIGN_ACCOUNT" ]; then
+            args+=("-c.win.azureSignOptions.endpoint=$AZURE_SIGN_ENDPOINT" "-c.win.azureSignOptions.codeSigningAccountName=$AZURE_SIGN_ACCOUNT" "-c.win.azureSignOptions.certificateProfileName=$AZURE_SIGN_PROFILE")
+            [ -n "$AZURE_SIGN_PUBLISHER" ] && args+=("-c.win.azureSignOptions.publisherName=$AZURE_SIGN_PUBLISHER")
+            unset CSC_LINK CSC_KEY_PASSWORD
+            echo "Signing with Azure Artifact Signing"
+          elif [ -n "$CSC_LINK" ]; then
+            echo "Signing with the certificate file"
+          else
+            unset CSC_LINK CSC_KEY_PASSWORD
+            echo "::warning::No Windows signing secrets are set - this build is not code-signed (SmartScreen may warn users)."
+          fi
+          npm run ${{ matrix.script }} -- "${args[@]}"
+      - name: Check the Windows signature
+        if: runner.os == 'Windows'
+        shell: pwsh
+        env:
+          EXPECT_SIGNED: ${{ (secrets.WIN_CERT_BASE64 != '' || secrets.AZURE_SIGN_ACCOUNT != '') && 'true' || 'false' }}
+        run: |
+          $files = Get-ChildItem release/*.exe
+          $bad = @()
+          foreach ($f in $files) {
+            $sig = Get-AuthenticodeSignature $f.FullName
+            Write-Host ("{0}: {1} {2}" -f $f.Name, $sig.Status, $sig.SignerCertificate.Subject)
+            if ($sig.Status -ne 'Valid') { $bad += $f.Name }
+          }
+          if ($env:EXPECT_SIGNED -eq 'true' -and $bad.Count -gt 0) {
+            Write-Host "::error::These files are not validly signed: $($bad -join ', ')"
+            exit 1
+          }
       # Run the packaged app on this clean machine; if it cannot install its engine, analyze, download or detect
       # videos, nothing gets published.
       - name: Smoke test the packaged app

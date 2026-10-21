@@ -28,6 +28,12 @@ class QueueRemovedEvent extends NativeEvent {
   final String id;
 }
 
+/// Whether downloads may use the current connection (false while "Wi-Fi only" is on and only mobile data is available).
+class NetworkEvent extends NativeEvent {
+  const NetworkEvent(this.allowed);
+  final bool allowed;
+}
+
 /// A link was shared to the app; fetch it with [NativeApi.takePendingLink].
 class LinkEvent extends NativeEvent {
   const LinkEvent();
@@ -64,6 +70,12 @@ abstract class NativeApi {
   /// The link shared to the app that the UI has not handled yet, if any.
   Future<String?> takePendingLink();
 
+  /// Whether the queue may download right now (see "Wi-Fi only").
+  Future<bool> downloadsAllowed();
+
+  /// Let the queue use mobile data until Wi-Fi comes back.
+  Future<void> allowMobileData();
+
   Stream<NativeEvent> get events;
 }
 
@@ -78,6 +90,7 @@ Map<String, dynamic> requestToNative(DownloadRequest r, Settings s) => {
       'expectedBytes': r.expectedBytes,
       'referer': r.referer,
       'cookieUrl': r.cookieUrl,
+      'clip': r.clip?.toJson(),
       'audio': isAudioQuality(r.quality),
       'args': buildExtraArgs(
         quality: r.quality,
@@ -85,6 +98,8 @@ Map<String, dynamic> requestToNative(DownloadRequest r, Settings s) => {
         referer: r.referer,
         nameTemplate: s.nameTemplate,
         speedLimit: s.speedLimit,
+        prefs: s.prefs,
+        clip: r.clip,
       ),
     };
 
@@ -165,6 +180,12 @@ class ChannelNativeApi implements NativeApi {
   Future<void> openExternal(String url) => _method.invokeMethod('openExternal', {'url': url});
 
   @override
+  Future<bool> downloadsAllowed() async => (await _method.invokeMethod<bool>('downloadsAllowed')) ?? true;
+
+  @override
+  Future<void> allowMobileData() => _method.invokeMethod('allowMobileData');
+
+  @override
   Future<String?> takePendingLink() async => _map(await _method.invokeMethod<Object?>('takePendingLink'))['url'] as String?;
 
   @override
@@ -178,6 +199,8 @@ class ChannelNativeApi implements NativeApi {
             return QueueUpdateEvent(DownloadItem.fromJson(data));
           case 'queueRemoved':
             return QueueRemovedEvent(data['id'] as String);
+          case 'network':
+            return NetworkEvent(data['allowed'] as bool? ?? true);
           default:
             return const LinkEvent();
         }
