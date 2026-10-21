@@ -35,6 +35,12 @@ StreamPull is a desktop (and, new in 0.4.0, Android) alternative to browser exte
   browser (the app then reuses that session). Direct links to public Instagram posts and reels work without signing in.
 - **Smart queue** — parallel downloads, pause / resume / cancel / retry, live speed and ETA.
 - **Library** — history with search, filters, *open file*, *show in folder*, *download again*.
+- **Audio done right** — the video's thumbnail becomes the cover art of your MP3/M4A (cropped to a square), with title/artist
+  tags, and you pick the MP3 bitrate (Best, 320, 192 or 128 kbps).
+- **Subtitles** — embed them in the video or save a separate `.srt`, in the languages you choose.
+- **Cut a clip** — download only from 1:30 to 2:40 instead of the whole video.
+- **Wi‑Fi only** (Android) — downloads wait until you're on Wi‑Fi, with a one-time "use mobile data now" button.
+  Every extra is optional: switch each one off in *Settings*.
 - **Color themes** — Violet, Ocean, Emerald, Rose, Sunset or Midnight black; change it any time in *Settings → Appearance*.
 - **Arabic first, English too** — full RTL layout, switchable at any time.
 - **On your phone too** — the Android app does the same job: paste a link or **share it from any app**, pick a quality,
@@ -52,6 +58,17 @@ StreamPull is a desktop (and, new in 0.4.0, Android) alternative to browser exte
 </p>
 <p align="center">
   <img src="docs/screenshots/about-en.png" width="400" alt="About: version and update check" />
+</p>
+
+### Extras (all optional)
+
+<p align="center">
+  <img src="docs/screenshots/extras-en.png" width="400" alt="Settings: audio files and video extras" />
+  <img src="docs/screenshots/clip-en.png" width="400" alt="Cut a clip: from 1:30 to 2:40" />
+</p>
+<p align="center">
+  <img src="docs/screenshots/android/extras-en.png" width="190" alt="Android settings: audio files" />
+  <img src="docs/screenshots/android/clip-en.png" width="190" alt="Android: cut a clip" />
 </p>
 
 ### Six color themes

@@ -113,6 +113,8 @@ Future<ui.Image> shot(
   required int tab,
   bool analyzed = false,
   bool scrollToEnd = false,
+  double scrollBy = 0,
+  Future<void> Function(WidgetTester tester, AppModel model)? prepare,
   String? file,
 }) async {
   final s = Sample(lang == 'ar');
@@ -139,6 +141,18 @@ Future<ui.Image> shot(
     await tester.pump(const Duration(milliseconds: 250));
   }
 
+  if (scrollBy != 0) {
+    await tester.drag(find.byType(ListView).first, Offset(0, scrollBy));
+    for (var i = 0; i < 4; i++) {
+      await tester.pump(const Duration(milliseconds: 250));
+    }
+  }
+  if (prepare != null) {
+    await prepare(tester, model);
+    for (var i = 0; i < 3; i++) {
+      await tester.pump(const Duration(milliseconds: 250));
+    }
+  }
   if (scrollToEnd) {
     await tester.drag(find.byType(ListView).first, const Offset(0, -6000));
     for (var i = 0; i < 4; i++) {
@@ -208,6 +222,34 @@ void main() {
       await shot(tester, lang: lang, theme: 'violet', tab: 2, file: 'library-$lang.png');
       await shot(tester, lang: lang, theme: 'violet', tab: 3, file: 'settings-$lang.png');
       await shot(tester, lang: lang, theme: 'violet', tab: 3, scrollToEnd: true, file: 'about-$lang.png');
+      // the audio / video extras in Settings, and the "cut a clip" fields on the media card
+      await shot(
+        tester,
+        lang: lang,
+        theme: 'violet',
+        tab: 3,
+        prepare: (t, m) async {
+          await t.scrollUntilVisible(find.text(m.t('set.audio')), 300, scrollable: find.byType(Scrollable).first);
+          await t.drag(find.byType(ListView).first, const Offset(0, 330));
+        },
+        file: 'extras-$lang.png',
+      );
+      await shot(
+        tester,
+        lang: lang,
+        theme: 'violet',
+        tab: 0,
+        analyzed: true,
+        scrollBy: -480,
+        prepare: (t, m) async {
+          await t.tap(find.text(m.t('media.clip')));
+          await t.pump(const Duration(milliseconds: 300));
+          final fields = find.byType(TextField);
+          await t.enterText(fields.at(fields.evaluate().length - 2), '1:30');
+          await t.enterText(fields.at(fields.evaluate().length - 1), '4:15');
+        },
+        file: 'clip-$lang.png',
+      );
     });
 
     testWidgets('themes ($lang)', (tester) async {
