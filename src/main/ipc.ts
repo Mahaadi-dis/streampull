@@ -48,6 +48,7 @@ import { checkForUpdate, checkForUpdateNow } from './services/updates'
 import { applyWindowTheme } from './windowTheme'
 import { analyze } from './services/ytdlp'
 import { isValidUrl } from '@shared/ytdlpArgs'
+import { validateClip } from '@shared/downloadOptions'
 
 const str = (v: unknown): string => (typeof v === 'string' ? v : '')
 
@@ -64,7 +65,8 @@ function sanitizeRequest(r: unknown): DownloadRequest | null {
     expectedBytes: typeof o.expectedBytes === 'number' && o.expectedBytes > 0 ? o.expectedBytes : null,
     referer: isValidUrl(str(o.referer)) ? str(o.referer) : null,
     cookieUrl: isValidUrl(str(o.cookieUrl)) ? str(o.cookieUrl) : null,
-    fileName: str(o.fileName).slice(0, 200) || null
+    fileName: str(o.fileName).slice(0, 200) || null,
+    clip: o.clip ? validateClip(o.clip.start, o.clip.end, typeof o.duration === 'number' ? o.duration : null) : null
   }
 }
 

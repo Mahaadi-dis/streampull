@@ -34,7 +34,14 @@ const settings: Settings = {
   speedLimit: '',
   notifications: true,
   adBlock: true,
-  checkUpdates: true
+  checkUpdates: true,
+  embedCover: true,
+  squareCover: true,
+  embedTags: true,
+  mp3Quality: 'best',
+  subtitleMode: 'off',
+  subtitleLangs: 'ar,en',
+  clipEnabled: true
 }
 
 const base = (i: number, o: Partial<DownloadItem>): DownloadItem => ({

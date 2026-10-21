@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { Check, ClipboardCopy, Download, ExternalLink, FolderOpen, Info, Loader2, RefreshCw, Stethoscope, Trash2 } from 'lucide-react'
 import { THEMES } from '@shared/themes'
 import type { Lang, NameTemplate } from '@shared/types'
+import { MP3_QUALITIES, SUBTITLE_MODES, type Mp3Quality, type SubtitleMode } from '@shared/downloadOptions'
 import type { UpdateCheck } from '@shared/release'
 import { useT } from '@/i18n'
 import { qualityLabel } from '@/lib/format'
@@ -42,6 +43,22 @@ function Segmented<T extends string>({
         </button>
       ))}
     </div>
+  )
+}
+
+function Toggle({ on, onChange, disabled }: { on: boolean; onChange: (v: boolean) => void; disabled?: boolean }): React.JSX.Element {
+  return (
+    <button
+      role="switch"
+      aria-checked={on}
+      disabled={disabled}
+      onClick={() => onChange(!on)}
+      className={`relative h-7 w-12 rounded-full transition disabled:opacity-40 ${
+        on ? 'bg-gradient-to-r from-brand-deep to-brand-pink shadow-glow' : 'bg-white/10'
+      }`}
+    >
+      <span className={`absolute top-1 h-5 w-5 rounded-full bg-white shadow transition-all ${on ? 'start-6' : 'start-1'}`} />
+    </button>
   )
 }
 
@@ -109,6 +126,23 @@ function About(): React.JSX.Element {
         </span>
       </Row>
     </Section>
+  )
+}
+
+/** The language list: saved when the field loses focus (a half-typed code must not reach yt-dlp). */
+function SubtitleLangs({ value, onSave }: { value: string; onSave: (v: string) => void }): React.JSX.Element {
+  const [text, setText] = useState(value)
+  useEffect(() => setText(value), [value])
+  return (
+    <input
+      className="input !w-40 !py-2"
+      dir="ltr"
+      value={text}
+      onChange={(e) => setText(e.target.value)}
+      onBlur={() => onSave(text)}
+      onKeyDown={(e) => e.key === 'Enter' && e.currentTarget.blur()}
+      placeholder="ar,en"
+    />
   )
 }
 
@@ -349,6 +383,55 @@ export default function Settings(): React.JSX.Element | null {
           >
             <Trash2 size={16} /> {t('set.clear')}
           </button>
+        </Row>
+      </Section>
+
+      <Section title={t('set.audio')}>
+        <Row label={t('set.cover')} hint={t('set.coverHint')}>
+          <Toggle on={settings.embedCover} onChange={(v) => updateSettings({ embedCover: v })} />
+        </Row>
+        <Row label={t('set.squareCover')} hint={t('set.squareCoverHint')}>
+          <Toggle on={settings.squareCover} disabled={!settings.embedCover} onChange={(v) => updateSettings({ squareCover: v })} />
+        </Row>
+        <Row label={t('set.tags')} hint={t('set.tagsHint')}>
+          <Toggle on={settings.embedTags} onChange={(v) => updateSettings({ embedTags: v })} />
+        </Row>
+        <Row label={t('set.mp3Quality')} hint={t('set.mp3QualityHint')}>
+          <select
+            className="input !w-auto !py-2"
+            value={settings.mp3Quality}
+            onChange={(e) => updateSettings({ mp3Quality: e.target.value as Mp3Quality })}
+          >
+            {MP3_QUALITIES.map((q) => (
+              <option key={q} value={q} className="bg-surface">
+                {q === 'best' ? t('set.mp3.best') : `${q} kbps`}
+              </option>
+            ))}
+          </select>
+        </Row>
+      </Section>
+
+      <Section title={t('set.videoExtras')}>
+        <Row label={t('set.subtitles')} hint={t('set.subtitlesHint')}>
+          <select
+            className="input !w-auto !py-2"
+            value={settings.subtitleMode}
+            onChange={(e) => updateSettings({ subtitleMode: e.target.value as SubtitleMode })}
+          >
+            {SUBTITLE_MODES.map((m) => (
+              <option key={m} value={m} className="bg-surface">
+                {t(`set.subtitles.${m}`)}
+              </option>
+            ))}
+          </select>
+        </Row>
+        {settings.subtitleMode !== 'off' && (
+          <Row label={t('set.subtitleLangs')} hint={t('set.subtitleLangsHint')}>
+            <SubtitleLangs value={settings.subtitleLangs} onSave={(v) => updateSettings({ subtitleLangs: v })} />
+          </Row>
+        )}
+        <Row label={t('set.clip')} hint={t('set.clipHint')}>
+          <Toggle on={settings.clipEnabled} onChange={(v) => updateSettings({ clipEnabled: v })} />
         </Row>
       </Section>
 

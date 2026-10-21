@@ -9,13 +9,14 @@ import type {
 } from '@shared/types'
 import { DEFAULT_QUALITIES } from '@shared/types'
 import { sanitizeFileName } from './sniffRules'
+import { mp3QualityArg, type Mp3Quality } from './downloadOptions'
 import { CHANNEL_TABS, channelTabUrl, type ChannelTab } from '@shared/channel'
 
 export const isAudioQuality = (q: QualityKey): boolean => q === 'mp3' || q === 'm4a'
 
 /** Format-selection args for a chosen quality. */
-export function formatArgs(quality: QualityKey): string[] {
-  if (quality === 'mp3') return ['-f', 'ba/b', '-x', '--audio-format', 'mp3', '--audio-quality', '0']
+export function formatArgs(quality: QualityKey, mp3Quality: Mp3Quality = 'best'): string[] {
+  if (quality === 'mp3') return ['-f', 'ba/b', '-x', '--audio-format', 'mp3', '--audio-quality', mp3QualityArg(mp3Quality)]
   if (quality === 'm4a') return ['-f', 'ba[ext=m4a]/ba/b', '-x', '--audio-format', 'm4a']
   const h = Number(quality)
   const filter = Number.isFinite(h) && h > 0 ? `[height<=${h}]` : ''

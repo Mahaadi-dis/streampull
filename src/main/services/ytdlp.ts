@@ -1,5 +1,6 @@
 import { spawn, type ChildProcess } from 'child_process'
 import { session } from 'electron'
+import { clipSuffix, downloadOptionArgs } from '@shared/downloadOptions'
 import type { AnalyzeResult, DownloadItem, Settings } from '@shared/types'
 import { analyzeWith, type RawResult, type RunOptions } from '@shared/analyze'
 import { usesBrowserLogin } from '@shared/accounts'
@@ -149,14 +150,15 @@ export function startDownload(
     '-P',
     settings.downloadDir,
     '-o',
-    `${outputNameFor(item.fileName, settings.nameTemplate)}.%(ext)s`,
+    `${outputNameFor(item.fileName, settings.nameTemplate)}${item.clip ? clipSuffix(item.clip) : ''}.%(ext)s`,
     '--progress-template',
     PROGRESS_TEMPLATE,
     '--progress-template',
     POST_TEMPLATE,
     '--print',
     'after_move:VGFILE|%(filepath)s',
-    ...formatArgs(item.quality)
+    ...formatArgs(item.quality, settings.mp3Quality),
+    ...downloadOptionArgs(item.quality, settings, item.clip)
   ]
   if (settings.speedLimit) args.push('--limit-rate', settings.speedLimit)
   if (cookieFile) args.push('--cookies', cookieFile)

@@ -2,6 +2,7 @@ import { app } from 'electron'
 import { join } from 'path'
 import type { Settings } from '@shared/types'
 import { DEFAULT_THEME, isThemeId } from '@shared/themes'
+import { DEFAULT_PREFS, cleanSubtitleLangs, isMp3Quality, isSubtitleMode } from '@shared/downloadOptions'
 import { JsonStore } from './jsonStore'
 
 const defaults = (): Settings => ({
@@ -14,7 +15,9 @@ const defaults = (): Settings => ({
   speedLimit: '',
   notifications: true,
   adBlock: true,
-  checkUpdates: true
+  checkUpdates: true,
+  ...DEFAULT_PREFS,
+  clipEnabled: true
 })
 
 let store: JsonStore<Settings>
@@ -41,6 +44,16 @@ export function updateSettings(patch: Partial<Settings>): Settings {
   if (typeof patch.notifications === 'boolean') s.notifications = patch.notifications
   if (typeof patch.adBlock === 'boolean') s.adBlock = patch.adBlock
   if (typeof patch.checkUpdates === 'boolean') s.checkUpdates = patch.checkUpdates
+  if (typeof patch.embedCover === 'boolean') s.embedCover = patch.embedCover
+  if (typeof patch.squareCover === 'boolean') s.squareCover = patch.squareCover
+  if (typeof patch.embedTags === 'boolean') s.embedTags = patch.embedTags
+  if (isMp3Quality(patch.mp3Quality)) s.mp3Quality = patch.mp3Quality
+  if (isSubtitleMode(patch.subtitleMode)) s.subtitleMode = patch.subtitleMode
+  if (typeof patch.subtitleLangs === 'string') {
+    const langs = cleanSubtitleLangs(patch.subtitleLangs)
+    if (langs) s.subtitleLangs = langs
+  }
+  if (typeof patch.clipEnabled === 'boolean') s.clipEnabled = patch.clipEnabled
   store.save()
   return s
 }

@@ -1,3 +1,4 @@
+import type { ClipRange, Mp3Quality, SubtitleMode } from './downloadOptions'
 import type { ChannelTab, ChannelTabId } from './channel'
 import type { ThemeId } from './themes'
 
@@ -18,6 +19,20 @@ export interface Settings {
   adBlock: boolean
   /** Ask GitHub on start-up whether a newer release exists (nothing is downloaded automatically). */
   checkUpdates: boolean
+  /** Put the video's thumbnail inside MP3/M4A files as cover art. */
+  embedCover: boolean
+  /** Crop that cover to a square. */
+  squareCover: boolean
+  /** Write title / artist / year tags into audio files. */
+  embedTags: boolean
+  /** Bitrate of MP3 downloads: 'best' (variable) or a fixed kbps. */
+  mp3Quality: Mp3Quality
+  /** Subtitles for video downloads: off, embedded in the video, or a separate .srt file. */
+  subtitleMode: SubtitleMode
+  /** Comma-separated language codes for subtitles, e.g. "ar,en". */
+  subtitleLangs: string
+  /** Show the "cut a clip" option on the media card. */
+  clipEnabled: boolean
 }
 
 /** 'best' | '2160' | '1080' | ... | 'mp3' | 'm4a' */
@@ -81,6 +96,8 @@ export interface DownloadRequest {
   cookieUrl?: string | null
   /** Literal output file name (without extension), used for sniffed media. */
   fileName?: string | null
+  /** Only download this part of the video (seconds). */
+  clip?: ClipRange | null
 }
 
 export type DownloadStatus =
