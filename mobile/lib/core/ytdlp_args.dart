@@ -54,10 +54,8 @@ List<String> buildExtraArgs({
   required NameTemplate nameTemplate,
   String speedLimit = '',
   DownloadPrefs prefs = const DownloadPrefs(),
-  ClipRange? clip,
 }) {
-  final name = '${outputNameFor(fileName, nameTemplate)}${clip == null ? '' : clipSuffix(clip)}';
-  final args = [...formatArgs(quality, prefs.mp3Quality), ...downloadOptionArgs(quality, prefs, clip), '-o', '$name.%(ext)s'];
+  final args = [...formatArgs(quality, prefs.mp3Quality), ...downloadOptionArgs(quality, prefs), '-o', '${outputNameFor(fileName, nameTemplate)}.%(ext)s'];
   if (speedLimit.isNotEmpty) args.addAll(['--limit-rate', speedLimit]);
   if (referer != null && referer.isNotEmpty) args.addAll(['--referer', referer]);
   return args;

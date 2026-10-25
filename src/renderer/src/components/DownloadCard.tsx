@@ -16,7 +16,6 @@ import type { DownloadItem } from '@shared/types'
 import { useT } from '@/i18n'
 import { useApp } from '@/store/app'
 import { formatBytes, formatDuration, formatSpeed, qualityLabel } from '@/lib/format'
-import { formatClipTime } from '@shared/downloadOptions'
 import { ProgressRing } from './ProgressRing'
 import { Thumb } from './Thumb'
 
@@ -84,11 +83,6 @@ export function DownloadCard({ item }: { item: DownloadItem }): React.JSX.Elemen
             {item.title}
           </h3>
           <span className="chip shrink-0 !px-2 !py-0.5 text-[10px]">{qualityLabel(item.quality, t('media.best'))}</span>
-          {item.clip && (
-            <span className="chip shrink-0 !px-2 !py-0.5 text-[10px]" dir="ltr">
-              {t('dl.clip', { from: formatClipTime(item.clip.start), to: formatClipTime(item.clip.end) })}
-            </span>
-          )}
         </div>
 
         <div className={`mt-1 flex flex-wrap items-center gap-x-3 gap-y-0.5 text-xs ${statusColor}`}>

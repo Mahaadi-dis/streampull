@@ -106,25 +106,6 @@ class SettingsPage extends StatelessWidget {
           ),
         ]),
 
-        _Section(m.t('set.videoExtras'), [
-          _Row(
-            m.t('set.subtitles'),
-            hint: m.t('set.subtitlesHint'),
-            trailing: DropdownButton<SubtitleMode>(
-              value: s.prefs.subtitleMode,
-              underline: const SizedBox.shrink(),
-              items: [for (final mode in SubtitleMode.values) DropdownMenuItem(value: mode, child: Text(m.t('set.subtitles.${mode.wire}')))],
-              onChanged: (v) => v == null ? null : m.updateSettings({'subtitleMode': v.wire}),
-            ),
-          ),
-          if (s.prefs.subtitleMode != SubtitleMode.off)
-            _Row(m.t('set.subtitleLangs'), hint: m.t('set.subtitleLangsHint'), trailing: _LangsField(value: s.prefs.subtitleLangs, onSave: (v) {
-              final clean = cleanSubtitleLangs(v);
-              if (clean != null) m.updateSettings({'subtitleLangs': clean});
-            })),
-          _Row(m.t('set.clip'), hint: m.t('set.clipHint'), trailing: Switch(value: s.clipEnabled, onChanged: (v) => m.updateSettings({'clipEnabled': v}))),
-        ]),
-
         _Section(m.t('set.engine'), [
           _Row(
             m.t('set.engineVersion'),
@@ -229,45 +210,6 @@ class _AboutSectionState extends State<_AboutSection> {
       _Row(m.t('about.license'), trailing: const Pill('GPL-3.0')),
     ]);
   }
-}
-
-/// The subtitle language list: saved when editing finishes (a half-typed code must not reach yt-dlp).
-class _LangsField extends StatefulWidget {
-  const _LangsField({required this.value, required this.onSave});
-
-  final String value;
-  final ValueChanged<String> onSave;
-
-  @override
-  State<_LangsField> createState() => _LangsFieldState();
-}
-
-class _LangsFieldState extends State<_LangsField> {
-  late final TextEditingController _c = TextEditingController(text: widget.value);
-
-  @override
-  void didUpdateWidget(_LangsField old) {
-    super.didUpdateWidget(old);
-    if (old.value != widget.value && _c.text != widget.value) _c.text = widget.value;
-  }
-
-  @override
-  void dispose() {
-    _c.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) => SizedBox(
-        width: 110,
-        child: TextField(
-          controller: _c,
-          textDirection: TextDirection.ltr,
-          decoration: const InputDecoration(isDense: true, hintText: 'ar,en'),
-          onSubmitted: widget.onSave,
-          onTapOutside: (_) => widget.onSave(_c.text),
-        ),
-      );
 }
 
 class _Section extends StatelessWidget {

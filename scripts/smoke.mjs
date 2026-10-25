@@ -54,12 +54,6 @@ function mp3Bitrate(buf) {
   }
   return null
 }
-function mp4Duration(buf) {
-  const i = ascii(buf, 'mvhd')
-  if (i < 0 || buf[i + 4] !== 0) return null
-  const scale = buf.readUInt32BE(i + 16)
-  return scale ? buf.readUInt32BE(i + 20) / scale : null
-}
 const check = (name, ok, detail = '') => {
   results.push({ name, ok, detail })
   log(ok ? 'PASS' : 'FAIL', name, detail)
@@ -163,25 +157,13 @@ async function main() {
         '<!doctype html><html><head><meta charset="utf-8"><title>Test Song</title>' +
           '<meta property="og:title" content="Test Song">' +
           '<meta property="og:image" content="' + origin + '/cover.png">' +
-          '<meta property="og:video" content="' + origin + '/clipr.mp4">' +
-          '</head><body><video src="' + origin + '/clipr.mp4"></video></body></html>'
+          '<meta property="og:video" content="' + origin + '/clip.mp4">' +
+          '</head><body><video src="' + origin + '/clip.mp4"></video></body></html>'
       )
     } else if (req.url === '/cover.png') {
       const data = readFileSync(cover)
       res.writeHead(200, { 'content-type': 'image/png', 'content-length': data.length })
       res.end(data)
-    } else if (req.url?.startsWith('/clipr.mp4')) {
-      const data = readFileSync(clip)
-      const m = /bytes=(\d*)-(\d*)/.exec(req.headers.range || '')
-      if (m) {
-        const start = m[1] ? Number(m[1]) : 0
-        const end = m[2] ? Math.min(Number(m[2]), data.length - 1) : data.length - 1
-        res.writeHead(206, { 'content-type': 'video/mp4', 'accept-ranges': 'bytes', 'content-range': `bytes ${start}-${end}/${data.length}`, 'content-length': end - start + 1 })
-        res.end(data.subarray(start, end + 1))
-      } else {
-        res.writeHead(200, { 'content-type': 'video/mp4', 'accept-ranges': 'bytes', 'content-length': data.length })
-        res.end(data)
-      }
     } else if (req.url?.startsWith('/clip.mp4')) {
       const data = readFileSync(clip)
       res.writeHead(200, { 'content-type': 'video/mp4', 'content-length': data.length, 'accept-ranges': 'none' })
@@ -238,11 +220,6 @@ async function main() {
   const plain = await downloadItem({ url: base + '/audio.html', title: 'no cover test', quality: 'mp3', fileName: 'no cover' })
   check('with the cover turned off the MP3 has none', plain?.status === 'completed' && !!plain.filePath && ascii(readFileSync(plain.filePath), 'APIC') < 0, JSON.stringify({ status: plain?.status, error: plain?.errorDetail }))
   await evalIn('window.api.setSettings({ embedCover: true })')
-
-  // 4c. a clip: seconds 2 to 6 of the 12 second video
-  const cut = await downloadItem({ url: base + '/audio.html', title: 'clip test', quality: 'best', clip: { start: 2, end: 6 } })
-  const secs = cut?.status === 'completed' && cut.filePath && existsSync(cut.filePath) ? mp4Duration(readFileSync(cut.filePath)) : null
-  check('a clip download is about 4 seconds long', secs !== null && secs >= 3 && secs <= 5.5, JSON.stringify({ status: cut?.status, error: cut?.errorDetail, seconds: secs }))
 
   // 5. the built-in browser notices the video
   await evalIn('window.api.browserSetBounds({ x: 300, y: 100, width: 800, height: 500 })')

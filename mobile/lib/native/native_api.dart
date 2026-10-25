@@ -90,7 +90,6 @@ Map<String, dynamic> requestToNative(DownloadRequest r, Settings s) => {
       'expectedBytes': r.expectedBytes,
       'referer': r.referer,
       'cookieUrl': r.cookieUrl,
-      'clip': r.clip?.toJson(),
       'audio': isAudioQuality(r.quality),
       'args': buildExtraArgs(
         quality: r.quality,
@@ -99,7 +98,6 @@ Map<String, dynamic> requestToNative(DownloadRequest r, Settings s) => {
         nameTemplate: s.nameTemplate,
         speedLimit: s.speedLimit,
         prefs: s.prefs,
-        clip: r.clip,
       ),
     };
 

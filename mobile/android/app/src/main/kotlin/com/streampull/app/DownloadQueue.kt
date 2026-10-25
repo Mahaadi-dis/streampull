@@ -309,10 +309,6 @@ object DownloadQueue {
         try {
             val size = file.length()
             val saved = MediaSaver.save(app, file, file.name)
-            // Subtitles saved as separate files go next to the video.
-            temp.listFiles()?.filter { it.isFile && it != file && it.extension.lowercase() in setOf("srt", "vtt", "ass") }?.forEach {
-                runCatching { MediaSaver.save(app, it, it.name) }
-            }
             temp.deleteRecursively()
             item.status = "completed"
             item.percent = 100.0

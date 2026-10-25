@@ -208,7 +208,6 @@ class DownloadRequest {
     this.referer,
     this.cookieUrl,
     this.fileName,
-    this.clip,
   });
 
   final String url;
@@ -222,8 +221,6 @@ class DownloadRequest {
   final String? cookieUrl;
   final String? fileName;
 
-  /// Only download this part of the video.
-  final ClipRange? clip;
 }
 
 class DownloadItem {
@@ -246,7 +243,6 @@ class DownloadItem {
     this.filePath,
     this.error,
     this.errorDetail,
-    this.clip,
   });
 
   final String id;
@@ -256,7 +252,6 @@ class DownloadItem {
   final double? duration;
   final String? uploader;
   final String quality;
-  final ClipRange? clip;
   final String? referer;
 
   /// queued | downloading | processing | paused | completed | error | canceled
@@ -293,7 +288,6 @@ class DownloadItem {
         filePath: _toStr(j['filePath']),
         error: j['error'] == null ? null : ErrorCode.parse(j['error'] as String?),
         errorDetail: _toStr(j['errorDetail']),
-        clip: ClipRange.fromJson(j['clip']),
         createdAt: _toInt(j['createdAt']) ?? 0,
       );
 }
@@ -371,7 +365,6 @@ class Settings {
     this.notifications = true,
     this.checkUpdates = true,
     this.prefs = const DownloadPrefs(),
-    this.clipEnabled = true,
     this.wifiOnly = false,
   });
 
@@ -386,11 +379,8 @@ class Settings {
   final bool notifications;
   final bool checkUpdates;
 
-  /// Cover art, tags, MP3 bitrate and subtitles.
+  /// Cover art, tags and MP3 bitrate.
   final DownloadPrefs prefs;
-
-  /// Show the "cut a clip" option on the media card.
-  final bool clipEnabled;
 
   /// Only download on Wi-Fi (or another unmetered connection).
   final bool wifiOnly;
@@ -409,10 +399,7 @@ class Settings {
           squareCover: j['squareCover'] as bool? ?? true,
           embedTags: j['embedTags'] as bool? ?? true,
           mp3Quality: isMp3Quality(j['mp3Quality']) ? j['mp3Quality'] as String : 'best',
-          subtitleMode: SubtitleMode.parse(j['subtitleMode'] as String?),
-          subtitleLangs: (j['subtitleLangs'] as String?) ?? defaultSubtitleLangs,
         ),
-        clipEnabled: j['clipEnabled'] as bool? ?? true,
         wifiOnly: j['wifiOnly'] as bool? ?? false,
       );
 
@@ -429,9 +416,6 @@ class Settings {
         'squareCover': prefs.squareCover,
         'embedTags': prefs.embedTags,
         'mp3Quality': prefs.mp3Quality,
-        'subtitleMode': prefs.subtitleMode.wire,
-        'subtitleLangs': prefs.subtitleLangs,
-        'clipEnabled': clipEnabled,
         'wifiOnly': wifiOnly,
       };
 
@@ -445,7 +429,6 @@ class Settings {
     bool? notifications,
     bool? checkUpdates,
     DownloadPrefs? prefs,
-    bool? clipEnabled,
     bool? wifiOnly,
   }) =>
       Settings(
@@ -458,7 +441,6 @@ class Settings {
         notifications: notifications ?? this.notifications,
         checkUpdates: checkUpdates ?? this.checkUpdates,
         prefs: prefs ?? this.prefs,
-        clipEnabled: clipEnabled ?? this.clipEnabled,
         wifiOnly: wifiOnly ?? this.wifiOnly,
       );
 }

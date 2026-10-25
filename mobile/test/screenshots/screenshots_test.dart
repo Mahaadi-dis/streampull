@@ -222,7 +222,7 @@ void main() {
       await shot(tester, lang: lang, theme: 'violet', tab: 2, file: 'library-$lang.png');
       await shot(tester, lang: lang, theme: 'violet', tab: 3, file: 'settings-$lang.png');
       await shot(tester, lang: lang, theme: 'violet', tab: 3, scrollToEnd: true, file: 'about-$lang.png');
-      // the audio / video extras in Settings, and the "cut a clip" fields on the media card
+      // the audio extras in Settings
       await shot(
         tester,
         lang: lang,
@@ -233,22 +233,6 @@ void main() {
           await t.drag(find.byType(ListView).first, const Offset(0, 330));
         },
         file: 'extras-$lang.png',
-      );
-      await shot(
-        tester,
-        lang: lang,
-        theme: 'violet',
-        tab: 0,
-        analyzed: true,
-        scrollBy: -480,
-        prepare: (t, m) async {
-          await t.tap(find.text(m.t('media.clip')));
-          await t.pump(const Duration(milliseconds: 300));
-          final fields = find.byType(TextField);
-          await t.enterText(fields.at(fields.evaluate().length - 2), '1:30');
-          await t.enterText(fields.at(fields.evaluate().length - 1), '4:15');
-        },
-        file: 'clip-$lang.png',
       );
     });
 

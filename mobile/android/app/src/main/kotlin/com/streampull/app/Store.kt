@@ -32,9 +32,6 @@ object SettingsStore {
     private val nameTemplates = setOf("title", "uploader-title", "title-id")
     private val rate = Regex("^\\d+(\\.\\d+)?[KMGkmg]?$")
     private val mp3Qualities = setOf("best", "320", "192", "128")
-    private val subtitleModes = setOf("off", "embed", "file")
-    private val langCode = "[A-Za-z]{2,3}([-_][A-Za-z0-9]{2,8})*"
-    private val langList = Regex("^" + langCode + "(," + langCode + "){0,7}$")
 
     @Volatile var concurrency = 3; private set
     @Volatile var lang = "ar"; private set
@@ -48,9 +45,6 @@ object SettingsStore {
     @Volatile var squareCover = true; private set
     @Volatile var embedTags = true; private set
     @Volatile var mp3Quality = "best"; private set
-    @Volatile var subtitleMode = "off"; private set
-    @Volatile var subtitleLangs = "ar,en"; private set
-    @Volatile var clipEnabled = true; private set
     @Volatile var wifiOnly = false; private set
 
     const val DOWNLOAD_DIR = "Download/StreamPull"
@@ -74,9 +68,6 @@ object SettingsStore {
         put("squareCover", squareCover)
         put("embedTags", embedTags)
         put("mp3Quality", mp3Quality)
-        put("subtitleMode", subtitleMode)
-        put("subtitleLangs", subtitleLangs)
-        put("clipEnabled", clipEnabled)
         put("wifiOnly", wifiOnly)
     }
 
@@ -101,9 +92,6 @@ object SettingsStore {
         if (p.has("squareCover")) squareCover = p.optBoolean("squareCover", squareCover)
         if (p.has("embedTags")) embedTags = p.optBoolean("embedTags", embedTags)
         p.optString("mp3Quality").takeIf { it in mp3Qualities }?.let { mp3Quality = it }
-        p.optString("subtitleMode").takeIf { it in subtitleModes }?.let { subtitleMode = it }
-        p.optString("subtitleLangs").takeIf { langList.matches(it) }?.let { subtitleLangs = it }
-        if (p.has("clipEnabled")) clipEnabled = p.optBoolean("clipEnabled", clipEnabled)
         if (p.has("wifiOnly")) wifiOnly = p.optBoolean("wifiOnly", wifiOnly)
     }
 }

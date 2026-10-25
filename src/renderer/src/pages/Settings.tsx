@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { Check, ClipboardCopy, Download, ExternalLink, FolderOpen, Info, Loader2, RefreshCw, Stethoscope, Trash2 } from 'lucide-react'
 import { THEMES } from '@shared/themes'
 import type { Lang, NameTemplate } from '@shared/types'
-import { MP3_QUALITIES, SUBTITLE_MODES, type Mp3Quality, type SubtitleMode } from '@shared/downloadOptions'
+import { MP3_QUALITIES, type Mp3Quality } from '@shared/downloadOptions'
 import type { UpdateCheck } from '@shared/release'
 import { useT } from '@/i18n'
 import { qualityLabel } from '@/lib/format'
@@ -126,23 +126,6 @@ function About(): React.JSX.Element {
         </span>
       </Row>
     </Section>
-  )
-}
-
-/** The language list: saved when the field loses focus (a half-typed code must not reach yt-dlp). */
-function SubtitleLangs({ value, onSave }: { value: string; onSave: (v: string) => void }): React.JSX.Element {
-  const [text, setText] = useState(value)
-  useEffect(() => setText(value), [value])
-  return (
-    <input
-      className="input !w-40 !py-2"
-      dir="ltr"
-      value={text}
-      onChange={(e) => setText(e.target.value)}
-      onBlur={() => onSave(text)}
-      onKeyDown={(e) => e.key === 'Enter' && e.currentTarget.blur()}
-      placeholder="ar,en"
-    />
   )
 }
 
@@ -408,30 +391,6 @@ export default function Settings(): React.JSX.Element | null {
               </option>
             ))}
           </select>
-        </Row>
-      </Section>
-
-      <Section title={t('set.videoExtras')}>
-        <Row label={t('set.subtitles')} hint={t('set.subtitlesHint')}>
-          <select
-            className="input !w-auto !py-2"
-            value={settings.subtitleMode}
-            onChange={(e) => updateSettings({ subtitleMode: e.target.value as SubtitleMode })}
-          >
-            {SUBTITLE_MODES.map((m) => (
-              <option key={m} value={m} className="bg-surface">
-                {t(`set.subtitles.${m}`)}
-              </option>
-            ))}
-          </select>
-        </Row>
-        {settings.subtitleMode !== 'off' && (
-          <Row label={t('set.subtitleLangs')} hint={t('set.subtitleLangsHint')}>
-            <SubtitleLangs value={settings.subtitleLangs} onSave={(v) => updateSettings({ subtitleLangs: v })} />
-          </Row>
-        )}
-        <Row label={t('set.clip')} hint={t('set.clipHint')}>
-          <Toggle on={settings.clipEnabled} onChange={(v) => updateSettings({ clipEnabled: v })} />
         </Row>
       </Section>
 

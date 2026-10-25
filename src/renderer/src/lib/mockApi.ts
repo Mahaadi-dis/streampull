@@ -38,10 +38,7 @@ const settings: Settings = {
   embedCover: true,
   squareCover: true,
   embedTags: true,
-  mp3Quality: 'best',
-  subtitleMode: 'off',
-  subtitleLangs: 'ar,en',
-  clipEnabled: true
+  mp3Quality: 'best'
 }
 
 const base = (i: number, o: Partial<DownloadItem>): DownloadItem => ({

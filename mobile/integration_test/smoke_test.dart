@@ -1,6 +1,6 @@
 // End-to-end smoke test of the real app on a device or emulator (run by CI): the bundled engine starts, a link is
-// analyzed and downloaded through the native queue, the optional features work (MP3 with a square cover and a chosen
-// bitrate, a cut clip), and the file shows up in the library.
+// analyzed and downloaded through the native queue, the optional audio features work (MP3 with a square cover and a
+// chosen bitrate), and the file shows up in the library.
 //
 // It needs a test site on the device's localhost:8099 (CI does `adb reverse tcp:8099 tcp:8099` and serves a generated
 // clip, a cover image and a page that points at both, see tool/ci_smoke.sh):
@@ -13,7 +13,6 @@ import 'dart:typed_data';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:integration_test/integration_test.dart';
 import 'package:streampull/core/analyze.dart';
-import 'package:streampull/core/download_options.dart';
 import 'package:streampull/core/models.dart';
 import 'package:streampull/native/native_api.dart';
 
@@ -101,20 +100,6 @@ int? mp3Bitrate(Uint8List bytes) {
   return null;
 }
 
-/// Duration in seconds from an MP4's `mvhd` box, or null.
-double? mp4Duration(Uint8List bytes) {
-  final i = indexOfAscii(bytes, 'mvhd');
-  if (i < 0) return null;
-  final b = ByteData.sublistView(bytes);
-  final version = bytes[i + 4];
-  if (version == 0) {
-    final timescale = b.getUint32(i + 16);
-    final duration = b.getUint32(i + 20);
-    return timescale == 0 ? null : duration / timescale;
-  }
-  return null;
-}
-
 void main() {
   IntegrationTestWidgetsFlutterBinding.ensureInitialized();
   final api = ChannelNativeApi();
@@ -133,16 +118,11 @@ void main() {
     final changed = await api.setSettings({'concurrency': settings.concurrency == 2 ? 3 : 2});
     expect(changed.concurrency, isNot(settings.concurrency));
     await api.setSettings({'concurrency': settings.concurrency});
-    final tuned = await api.setSettings({'mp3Quality': '128', 'subtitleMode': 'file', 'subtitleLangs': 'ar,en', 'clipEnabled': false});
+    final tuned = await api.setSettings({'mp3Quality': '128'});
     expect(tuned.prefs.mp3Quality, '128');
-    expect(tuned.prefs.subtitleMode, SubtitleMode.file);
-    expect(tuned.clipEnabled, isFalse);
     // invalid values are ignored, not stored
-    final bad = await api.setSettings({'mp3Quality': '999', 'subtitleMode': 'rm -rf', 'subtitleLangs': '--exec x'});
+    final bad = await api.setSettings({'mp3Quality': '999'});
     expect(bad.prefs.mp3Quality, '128');
-    expect(bad.prefs.subtitleMode, SubtitleMode.file);
-    expect(bad.prefs.subtitleLangs, 'ar,en');
-    await api.setSettings({'subtitleMode': 'off', 'clipEnabled': true});
 
     // 3. "Wi-Fi only" can be switched; the emulator's connection is unmetered, so downloads stay allowed
     final wifi = await api.setSettings({'wifiOnly': true});
@@ -192,19 +172,5 @@ void main() {
     await api.queueRemove(plain.id);
     await api.setSettings({'embedCover': true});
 
-    // 9. a clip: seconds 2 to 6 of the 10 second video
-    final clipSettings = await api.getSettings();
-    final clip = await download(
-      api,
-      clipSettings,
-      const DownloadRequest(url: pageUrl, title: 'clip test', clip: ClipRange(2, 6)),
-    );
-    expect(clip.clip, const ClipRange(2, 6));
-    expect(clip.filePath, contains('[clip'));
-    final seconds = mp4Duration(readSaved(clip));
-    expect(seconds, isNotNull);
-    expect(seconds, inInclusiveRange(3.0, 5.5), reason: 'the clip should be about 4 seconds, was $seconds');
-    await api.historyRemove(clip.id, deleteFile: true);
-    await api.queueRemove(clip.id);
   });
 }
