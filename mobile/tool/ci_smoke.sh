@@ -56,6 +56,8 @@ steps() { adb shell run-as com.streampull.app cat cache/wifi_step 2>/dev/null | 
 adb shell run-as com.streampull.app rm -f cache/wifi_step >/dev/null 2>&1
 flutter test integration_test/wifi_test.dart -d emulator-5554 --no-pub > "$wifi_log" 2>&1 &
 wifi_pid=$!
+# a look at the app's cache folder while the test is running, in case the marker file does not show up
+( sleep 45; { echo "cache folder after 45 s:"; adb shell run-as com.streampull.app ls -la cache 2>&1; } >> "$host_log" ) &
 for step in offline online offline2 online2; do
   until steps | grep -qx "$step" || ! kill -0 "$wifi_pid" 2>/dev/null; do sleep 1; done
   steps | grep -qx "$step" || break

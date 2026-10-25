@@ -20,7 +20,7 @@ import 'package:streampull/native/native_api.dart';
 /// `adb shell run-as`; printed output cannot be used for that because it only reaches the host when the test is over.
 void mark(String step) {
   print('WIFI_STEP $step');
-  File('${Directory.systemTemp.path}/wifi_step').writeAsStringSync('$step\n', mode: FileMode.append, flush: true);
+  File('/data/data/com.streampull.app/cache/wifi_step').writeAsStringSync('$step\n', mode: FileMode.append, flush: true);
 }
 
 const clipUrl = 'http://127.0.0.1:8099/clip.mp4';
