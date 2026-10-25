@@ -44,24 +44,33 @@ if [ "$code" -ne 0 ]; then
   exit "$code"
 fi
 
-# "Wi-Fi only": the test prints WIFI_STEP markers, we flip the emulator's Wi-Fi in response.
+# "Wi-Fi only": the test prints WIFI_STEP markers and we flip the emulator's Wi-Fi in response. The markers are read from
+# logcat: the output of flutter test is not flushed until the test ends, so it cannot be used to react in time.
 wifi_log="$work/wifi.log"
+marks="$work/marks.log"
+adb logcat -c
+adb logcat -v brief "flutter:I" "*:S" > "$marks" 2>&1 &
+logcat_pid=$!
 flutter test integration_test/wifi_test.dart -d emulator-5554 --no-pub > "$wifi_log" 2>&1 &
 wifi_pid=$!
 for step in offline online offline2 online2; do
-  until grep -q "WIFI_STEP $step" "$wifi_log" || ! kill -0 "$wifi_pid" 2>/dev/null; do sleep 1; done
-  grep -q "WIFI_STEP $step" "$wifi_log" || break
+  until grep -q "WIFI_STEP $step" "$marks" || ! kill -0 "$wifi_pid" 2>/dev/null; do sleep 1; done
+  grep -q "WIFI_STEP $step" "$marks" || break
   case "$step" in
     offline*) adb shell svc wifi disable ;;
     online*) adb shell svc wifi enable ;;
   esac
   echo "wifi: $step"
+  sleep 3
+  adb shell dumpsys connectivity | grep -E "Active default network|Transports:" | head -4
 done
 wait "$wifi_pid"
 wcode=$?
+kill "$logcat_pid" 2>/dev/null
 cat "$wifi_log"
 if [ "$wcode" -ne 0 ]; then
   annotate_failure "wifi" "$wifi_log" "$wcode"
+  grep -E "WIFI_STEP" "$marks" | head -5 | while IFS= read -r line; do echo "::error::wifi marker: ${line%$''}"; done
   exit "$wcode"
 fi
 exit 0
