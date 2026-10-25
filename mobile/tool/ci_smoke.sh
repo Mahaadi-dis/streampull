@@ -31,7 +31,7 @@ annotate_failure() {
     echo "::error::$name: ${line//$'\r'/}"
   done
   echo "::error::$name failed (exit $code)"
-  adb logcat -d | grep -iE "streampull|StreamPullNet|youtubedl|yt-dlp|Traceback|Error" | grep -viE "chatty|vold" | tail -30 | while IFS= read -r line; do
+  adb logcat -d | grep -iE "streampull|StreamPullNet|youtubedl|yt-dlp|Traceback" | grep -viE "chatty|vold|AppsFilter|WindowManager" | tail -30 | while IFS= read -r line; do
     echo "::error::logcat: ${line//$'\r'/}"
   done
 }
@@ -44,18 +44,16 @@ if [ "$code" -ne 0 ]; then
   exit "$code"
 fi
 
-# "Wi-Fi only": the test prints WIFI_STEP markers and we flip the emulator's Wi-Fi in response. The markers are read from
-# logcat: the output of flutter test is not flushed until the test ends, so it cannot be used to react in time.
+# "Wi-Fi only": the test writes its WIFI_STEP markers into a file in the app's cache (printed output only reaches us
+# when the test is over) and we flip the emulator's Wi-Fi in response.
 wifi_log="$work/wifi.log"
-marks="$work/marks.log"
-adb logcat -c
-adb logcat -v brief "flutter:I" "*:S" > "$marks" 2>&1 &
-logcat_pid=$!
+steps() { adb shell run-as com.streampull.app cat cache/wifi_step 2>/dev/null | tr -d '\r'; }
+adb shell run-as com.streampull.app rm -f cache/wifi_step >/dev/null 2>&1
 flutter test integration_test/wifi_test.dart -d emulator-5554 --no-pub > "$wifi_log" 2>&1 &
 wifi_pid=$!
 for step in offline online offline2 online2; do
-  until grep -q "WIFI_STEP $step" "$marks" || ! kill -0 "$wifi_pid" 2>/dev/null; do sleep 1; done
-  grep -q "WIFI_STEP $step" "$marks" || break
+  until steps | grep -qx "$step" || ! kill -0 "$wifi_pid" 2>/dev/null; do sleep 1; done
+  steps | grep -qx "$step" || break
   case "$step" in
     offline*) adb shell svc wifi disable ;;
     online*) adb shell svc wifi enable ;;
@@ -66,11 +64,10 @@ for step in offline online offline2 online2; do
 done
 wait "$wifi_pid"
 wcode=$?
-kill "$logcat_pid" 2>/dev/null
 cat "$wifi_log"
 if [ "$wcode" -ne 0 ]; then
   annotate_failure "wifi" "$wifi_log" "$wcode"
-  grep -E "WIFI_STEP" "$marks" | head -5 | while IFS= read -r line; do echo "::error::wifi marker: ${line%$''}"; done
+  echo "::error::wifi steps seen: $(steps | tr '\n' ' ')"
   exit "$wcode"
 fi
 exit 0

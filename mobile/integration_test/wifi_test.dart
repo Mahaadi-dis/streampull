@@ -9,10 +9,19 @@
 
 // ignore_for_file: avoid_print
 
+import 'dart:io';
+
 import 'package:flutter_test/flutter_test.dart';
 import 'package:integration_test/integration_test.dart';
 import 'package:streampull/core/models.dart';
 import 'package:streampull/native/native_api.dart';
+
+/// Tells the host script (tool/ci_smoke.sh) what the test is waiting for. The host reads this file with
+/// `adb shell run-as`; printed output cannot be used for that because it only reaches the host when the test is over.
+void mark(String step) {
+  print('WIFI_STEP $step');
+  File('${Directory.systemTemp.path}/wifi_step').writeAsStringSync('$step\n', mode: FileMode.append, flush: true);
+}
 
 const clipUrl = 'http://127.0.0.1:8099/clip.mp4';
 
@@ -52,7 +61,7 @@ void main() {
     expect(await api.downloadsAllowed(), isTrue, reason: 'Wi-Fi is on, so downloads are allowed');
 
     // Wi-Fi goes away: downloads are not allowed, and a new one just waits
-    print('WIFI_STEP offline');
+    mark('offline');
     await waitAllowed(api, false, 'downloads to be blocked after Wi-Fi was switched off');
     final waiting = await add(api, settings, 'wifi wait test');
     await Future<void>.delayed(const Duration(seconds: 10));
@@ -60,7 +69,7 @@ void main() {
     expect(stillWaiting?.status, 'queued', reason: 'the download must wait while there is no Wi-Fi (was ${stillWaiting?.status})');
 
     // Wi-Fi comes back: the waiting download runs and completes
-    print('WIFI_STEP online');
+    mark('online');
     await waitAllowed(api, true, 'downloads to be allowed again after Wi-Fi came back');
     final done = await eventually(() async {
       final d = await find(api, waiting.id);
@@ -69,7 +78,7 @@ void main() {
     expect(done.status, 'completed', reason: '${done.error} ${done.errorDetail}');
 
     // Wi-Fi goes away again: "use mobile data now" lets it through
-    print('WIFI_STEP offline2');
+    mark('offline2');
     await waitAllowed(api, false, 'downloads to be blocked again');
     final once = await add(api, settings, 'mobile data once test');
     await Future<void>.delayed(const Duration(seconds: 6));
@@ -83,7 +92,7 @@ void main() {
     expect(onceDone.status, 'completed', reason: '${onceDone.error} ${onceDone.errorDetail}');
 
     // back to normal
-    print('WIFI_STEP online2');
+    mark('online2');
     await waitAllowed(api, true, 'downloads to be allowed after the final Wi-Fi reconnect');
     for (final id in [waiting.id, once.id]) {
       await api.historyRemove(id, deleteFile: true);
