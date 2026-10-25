@@ -24,16 +24,19 @@ server=$!
 trap 'kill $server 2>/dev/null; adb shell svc wifi enable >/dev/null 2>&1' EXIT
 adb reverse tcp:8099 tcp:8099
 
+# GitHub shows at most 10 error annotations per step, so everything goes into a few multi-line ones.
+annotate() {
+  local title="$1" text="$2"
+  text="${text//'%'/'%25'}"
+  text="${text//$'\r'/}"
+  text="${text//$'\n'/'%0A'}"
+  echo "::error title=${title}::${text:0:3800}"
+}
+
 annotate_failure() {
   local name="$1" log="$2" code="$3"
-  # one annotation per interesting line so the reason is visible without opening the log
-  grep -E "Expected|Actual|Which is|Timed out|Engine failed|Exception|Error|FAILED|failed|WIFI_STEP" "$log" | head -15 | while IFS= read -r line; do
-    echo "::error::$name: ${line//$'\r'/}"
-  done
-  echo "::error::$name failed (exit $code)"
-  adb logcat -d | grep -iE "streampull|StreamPullNet|youtubedl|yt-dlp|Traceback" | grep -viE "chatty|vold|AppsFilter|WindowManager" | tail -30 | while IFS= read -r line; do
-    echo "::error::logcat: ${line//$'\r'/}"
-  done
+  annotate "$name failed (exit $code)" "$(grep -E "Expected|Actual|Which is|Timed out|Engine failed|Exception|Error|FAILED|failed|WIFI_STEP" "$log" | head -15)"
+  annotate "$name logcat" "$(adb logcat -d | grep -iE "streampull|StreamPullNet|youtubedl|yt-dlp|Traceback" | grep -viE "chatty|vold|AppsFilter|WindowManager|ProfileInstaller|InputManager" | tail -25 | cut -c1-230)"
 }
 
 log="$work/test.log"
@@ -69,9 +72,9 @@ wcode=$?
 cat "$wifi_log"
 if [ "$wcode" -ne 0 ]; then
   annotate_failure "wifi" "$wifi_log" "$wcode"
-  echo "::error::wifi steps seen: $(steps | tr '\n' ' ')"
-  while IFS= read -r line; do echo "::error::host: ${line%$'\r'}"; done < "$host_log"
-  adb logcat -d -s StreamPullNet:I | tail -20 | while IFS= read -r line; do echo "::error::net: ${line%$'\r'}"; done
+  annotate "wifi: what the script did" "steps seen: $(steps | tr '\n' ' ')
+$(cat "$host_log")"
+  annotate "wifi: network guard log" "$(adb logcat -d -s StreamPullNet:I | tail -20 | cut -c1-200)"
   exit "$wcode"
 fi
 exit 0
