@@ -47,6 +47,8 @@ fi
 # "Wi-Fi only": the test writes its WIFI_STEP markers into a file in the app's cache (printed output only reaches us
 # when the test is over) and we flip the emulator's Wi-Fi in response.
 wifi_log="$work/wifi.log"
+host_log="$work/host.log"
+: > "$host_log"
 steps() { adb shell run-as com.streampull.app cat cache/wifi_step 2>/dev/null | tr -d '\r'; }
 adb shell run-as com.streampull.app rm -f cache/wifi_step >/dev/null 2>&1
 flutter test integration_test/wifi_test.dart -d emulator-5554 --no-pub > "$wifi_log" 2>&1 &
@@ -58,9 +60,9 @@ for step in offline online offline2 online2; do
     offline*) adb shell svc wifi disable ;;
     online*) adb shell svc wifi enable ;;
   esac
-  echo "wifi: $step"
-  sleep 3
-  adb shell dumpsys connectivity | grep -E "Active default network|Transports:" | head -4
+  echo "wifi: $step" | tee -a "$host_log"
+  sleep 4
+  { adb shell dumpsys connectivity | grep -E "Active default network|Transports:" | head -4; adb shell settings get global wifi_on; adb logcat -d -s StreamPullNet:I | tail -3; } 2>&1 | tee -a "$host_log"
 done
 wait "$wifi_pid"
 wcode=$?
@@ -68,6 +70,8 @@ cat "$wifi_log"
 if [ "$wcode" -ne 0 ]; then
   annotate_failure "wifi" "$wifi_log" "$wcode"
   echo "::error::wifi steps seen: $(steps | tr '\n' ' ')"
+  while IFS= read -r line; do echo "::error::host: ${line%$'\r'}"; done < "$host_log"
+  adb logcat -d -s StreamPullNet:I | tail -20 | while IFS= read -r line; do echo "::error::net: ${line%$'\r'}"; done
   exit "$wcode"
 fi
 exit 0
