@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { DEFAULT_PREFS, SQUARE_COVER_PPA, downloadOptionArgs, mp3QualityArg } from './downloadOptions'
+import { DEFAULT_PREFS, SQUARE_COVER_FORMATS, SQUARE_COVER_PPA, downloadOptionArgs, mp3QualityArg } from './downloadOptions'
 import { formatArgs } from './ytdlpArgs'
 
 describe('audio options', () => {
@@ -7,7 +7,7 @@ describe('audio options', () => {
     expect(downloadOptionArgs('mp3', DEFAULT_PREFS)).toEqual([
       '--embed-thumbnail',
       '--convert-thumbnails',
-      'jpg',
+      SQUARE_COVER_FORMATS,
       '--ppa',
       SQUARE_COVER_PPA,
       '--embed-metadata'
@@ -18,6 +18,14 @@ describe('audio options', () => {
     const a = downloadOptionArgs('m4a', { ...DEFAULT_PREFS, squareCover: false })
     expect(a).toContain('--embed-thumbnail')
     expect(a).not.toContain('--ppa')
+    expect(a[a.indexOf('--convert-thumbnails') + 1]).toBe('jpg')
+  })
+
+  it('converts every thumbnail format to a different one, so the crop never gets skipped', () => {
+    // yt-dlp skips jpg -> jpg; a real YouTube thumbnail is a jpg
+    const rules = SQUARE_COVER_FORMATS.split('/').map((r) => r.split('>'))
+    expect(rules.map(([from]) => from).sort()).toEqual(['jpg', 'png', 'webp'])
+    for (const [from, to] of rules) expect(to).not.toBe(from)
   })
 
   it('does nothing when the toggles are off', () => {

@@ -2,11 +2,12 @@
 """Static file server with HTTP Range support, for the Android smoke test (python's http.server cannot seek, which
 yt-dlp's --download-sections needs).
 
-    python3 test_server.py <directory> <port>
+    python3 test_server.py <directory> <port> [host]   (host defaults to 127.0.0.1; an IPv6 address such as ::1 works too)
 """
 import http.server
 import os
 import re
+import socket
 import sys
 
 
@@ -54,7 +55,12 @@ class Handler(http.server.SimpleHTTPRequestHandler):
         super().end_headers()
 
 
+class Server6(http.server.ThreadingHTTPServer):
+    address_family = socket.AF_INET6
+
+
 if __name__ == "__main__":
     root, port = sys.argv[1], int(sys.argv[2])
+    host = sys.argv[3] if len(sys.argv) > 3 else "127.0.0.1"
     os.chdir(root)
-    http.server.ThreadingHTTPServer(("127.0.0.1", port), Handler).serve_forever()
+    (Server6 if ":" in host else http.server.ThreadingHTTPServer)((host, port), Handler).serve_forever()

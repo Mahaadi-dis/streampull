@@ -8,13 +8,23 @@ void main() {
 
   group('audio options', () {
     test('embeds a square cover and tags by default', () {
-      expect(downloadOptionArgs('mp3', defaults), ['--embed-thumbnail', '--convert-thumbnails', 'jpg', '--ppa', squareCoverPpa, '--embed-metadata']);
+      expect(downloadOptionArgs('mp3', defaults), ['--embed-thumbnail', '--convert-thumbnails', squareCoverFormats, '--ppa', squareCoverPpa, '--embed-metadata']);
     });
 
     test('skips the crop when the cover should stay as it is', () {
       final a = downloadOptionArgs('m4a', const DownloadPrefs(squareCover: false));
       expect(a, contains('--embed-thumbnail'));
       expect(a, isNot(contains('--ppa')));
+      expect(a[a.indexOf('--convert-thumbnails') + 1], 'jpg');
+    });
+
+    test('converts every thumbnail format to a different one, so the crop never gets skipped', () {
+      // yt-dlp skips jpg -> jpg; a real YouTube thumbnail is a jpg
+      final rules = squareCoverFormats.split('/').map((r) => r.split('>')).toList();
+      expect(rules.map((r) => r[0]).toList()..sort(), ['jpg', 'png', 'webp']);
+      for (final r in rules) {
+        expect(r[1], isNot(r[0]));
+      }
     });
 
     test('does nothing when the toggles are off', () {

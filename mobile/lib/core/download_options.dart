@@ -21,7 +21,12 @@ class DownloadPrefs {
 }
 
 /// yt-dlp's `--ppa` that crops the cover to a centered square before it is embedded.
-const squareCoverPpa = "ThumbnailsConvertor+FFmpeg_o:-c:v mjpeg -vf crop=\"'if(gt(ih,iw),iw,ih)':'if(gt(iw,ih),ih,iw)'\"";
+const squareCoverPpa = "ThumbnailsConvertor+FFmpeg_o:-vf crop=\"'if(gt(ih,iw),iw,ih)':'if(gt(iw,ih),ih,iw)'\"";
+
+/// Thumbnail conversion rules used together with the crop. yt-dlp skips a conversion whose source and target format are
+/// the same (YouTube's jpg thumbnails with "jpg" as the target), and then the crop would never run. Here every format
+/// is converted to a different one, so the crop always runs: png→jpg, jpg→png, webp→png.
+const squareCoverFormats = 'png>jpg/jpg>png/webp>png';
 
 bool _isAudio(String q) => q == 'mp3' || q == 'm4a';
 
@@ -33,7 +38,7 @@ List<String> downloadOptionArgs(String quality, DownloadPrefs prefs) {
   final args = <String>[];
   if (_isAudio(quality)) {
     if (prefs.embedCover) {
-      args.addAll(['--embed-thumbnail', '--convert-thumbnails', 'jpg']);
+      args.addAll(['--embed-thumbnail', '--convert-thumbnails', prefs.squareCover ? squareCoverFormats : 'jpg']);
       if (prefs.squareCover) args.addAll(['--ppa', squareCoverPpa]);
     }
     if (prefs.embedTags) args.add('--embed-metadata');

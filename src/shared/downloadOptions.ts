@@ -28,7 +28,14 @@ export const DEFAULT_PREFS: DownloadPrefs = {
 
 /** yt-dlp's `--ppa` that crops the cover to a centered square before it is embedded. */
 export const SQUARE_COVER_PPA =
-  "ThumbnailsConvertor+FFmpeg_o:-c:v mjpeg -vf crop=\"'if(gt(ih,iw),iw,ih)':'if(gt(iw,ih),ih,iw)'\""
+  "ThumbnailsConvertor+FFmpeg_o:-vf crop=\"'if(gt(ih,iw),iw,ih)':'if(gt(iw,ih),ih,iw)'\""
+
+/**
+ * Thumbnail conversion rules used together with the crop. yt-dlp skips a conversion whose source and target format are
+ * the same (YouTube's jpg thumbnails with "jpg" as the target), and then the crop would never run. Here every format
+ * is converted to a different one, so the crop always runs: png→jpg, jpg→png, webp→png.
+ */
+export const SQUARE_COVER_FORMATS = 'png>jpg/jpg>png/webp>png'
 
 const isAudio = (q: QualityKey): boolean => q === 'mp3' || q === 'm4a'
 
@@ -40,7 +47,7 @@ export function downloadOptionArgs(quality: QualityKey, prefs: DownloadPrefs): s
   const args: string[] = []
   if (isAudio(quality)) {
     if (prefs.embedCover) {
-      args.push('--embed-thumbnail', '--convert-thumbnails', 'jpg')
+      args.push('--embed-thumbnail', '--convert-thumbnails', prefs.squareCover ? SQUARE_COVER_FORMATS : 'jpg')
       if (prefs.squareCover) args.push('--ppa', SQUARE_COVER_PPA)
     }
     if (prefs.embedTags) args.push('--embed-metadata')
